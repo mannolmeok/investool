@@ -1,0 +1,32 @@
+"""run_daily.py — 매일 배치: fetch → analyze → render → out/summary.md"""
+import sys, json, subprocess
+from pathlib import Path
+from datetime import datetime, timezone, timedelta
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "engine"))
+from lines import analyze
+from render import render
+
+KST = timezone(timedelta(hours=9))
+
+def main():
+    subprocess.run([sys.executable, str(ROOT / "engine/fetch.py")], check=False)
+    syms = [s.strip() for s in (ROOT / "watchlist.txt").read_text().splitlines() if s.strip() and not s.startswith("#")]
+    out = ROOT / "out"; out.mkdir(exist_ok=True)
+    md = [f"# 선 긋기 리포트 · {datetime.now(KST):%Y-%m-%d %H:%M} KST", "", "데이터: 야후 파이낸스 일봉(15분 지연) · 문장은 가능성 표현, 확률 아님", ""]
+    for s in syms:
+        csv = ROOT / "data" / f"{s}.csv"
+        if not csv.exists():
+            md.append(f"## {s}\n- 데이터 없음\n"); continue
+        r = render(str(csv), str(out / f"{s}.png"))
+        (out / f"{s}.json").write_text(json.dumps(r, ensure_ascii=False, indent=1, default=float), encoding="utf-8")
+        md.append(f"## {s} · {r['asof']} 종가 {r['close']:,.2f}" if not r["krw"] else f"## {s} · {r['asof']} 종가 {r['close']:,.0f}")
+        md.append(f"![{s}](./{s}.png)")
+        md += ["- " + x for x in r["sentences"]]
+        md.append("")
+    (out / "summary.md").write_text("\n".join(md), encoding="utf-8")
+    print("\n".join(md))
+
+if __name__ == "__main__":
+    main()
