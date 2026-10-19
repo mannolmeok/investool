@@ -30,7 +30,7 @@ def beta(a: pd.Series, b: pd.Series, n=60):
     ra, rb = j.iloc[:, 0].pct_change().dropna(), j.iloc[:, 1].pct_change().dropna()
     ra, rb = ra.align(rb, join="inner")
     v = np.var(rb)
-    return float(np.cov(ra, rb)[0, 1] / v) if v > 0 else 1.0
+    return float(np.clip(np.cov(ra, rb)[0, 1] / v, 0.0, 3.0)) if v > 0 else 1.0
 
 
 def analyze(sym, cfg):

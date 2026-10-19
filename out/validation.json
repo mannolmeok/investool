@@ -1,0 +1,185 @@
+{
+ "INFQ": {
+  "symbol": "INFQ",
+  "days": 104,
+  "confluence": {
+   "n": 15,
+   "touch": 0.8666666666666667,
+   "react_given_touch": 0.7692307692307693,
+   "break_given_touch": 0.6923076923076923,
+   "n_touch": 13
+  },
+  "single_level": {
+   "n": 23,
+   "touch": 0.8695652173913043,
+   "react_given_touch": 0.6,
+   "break_given_touch": 0.45,
+   "n_touch": 20
+  },
+  "dummy_3pct": {
+   "n": 104,
+   "touch": 0.8653846153846154,
+   "react_given_touch": 0.5888888888888889,
+   "break_given_touch": 0.6333333333333333,
+   "n_touch": 90
+  },
+  "base_fwd_ret": -0.002538262170591581,
+  "base_fwd_mdd": -0.09332952884217499,
+  "tl_break": {
+   "n": 11,
+   "fwd_ret": 0.013328500789753268,
+   "win": 0.6363636363636364
+  },
+  "rsi_lt30": {
+   "n": 0,
+   "fwd_ret": null,
+   "win": null
+  },
+  "near_conf": {
+   "n": 15,
+   "fwd_mdd": -0.0654878391601145,
+   "fwd_ret": 0.006127827882209395
+  },
+  "empty_space": {
+   "n": 76,
+   "fwd_mdd": -0.09732207441557454,
+   "fwd_ret": 0.001691657241583861
+  },
+  "pattern_abs_move": {
+   "상승쐐기": {
+    "n": 19,
+    "abs_ret": 0.07425223771626299
+   },
+   "삼각수렴": {
+    "n": 23,
+    "abs_ret": 0.10211702247110672
+   },
+   "하락쐐기": {
+    "n": 14,
+    "abs_ret": 0.09440397326932802
+   }
+  }
+ },
+ "005930.KS": {
+  "symbol": "005930.KS",
+  "days": 178,
+  "confluence": {
+   "n": 27,
+   "touch": 0.8518518518518519,
+   "react_given_touch": 0.782608695652174,
+   "break_given_touch": 0.5217391304347826,
+   "n_touch": 23
+  },
+  "single_level": {
+   "n": 11,
+   "touch": 0.5454545454545454,
+   "react_given_touch": 0.5,
+   "break_given_touch": 0.5,
+   "n_touch": 6
+  },
+  "dummy_3pct": {
+   "n": 178,
+   "touch": 0.7078651685393258,
+   "react_given_touch": 0.6746031746031746,
+   "break_given_touch": 0.5873015873015873,
+   "n_touch": 126
+  },
+  "base_fwd_ret": 0.01718399094684218,
+  "base_fwd_mdd": -0.06386262678088354,
+  "tl_break": {
+   "n": 16,
+   "fwd_ret": 0.0023195129188945812,
+   "win": 0.5625
+  },
+  "rsi_lt30": {
+   "n": 0,
+   "fwd_ret": null,
+   "win": null
+  },
+  "near_conf": {
+   "n": 27,
+   "fwd_mdd": -0.0593791326691671,
+   "fwd_ret": 0.015779260820943185
+  },
+  "empty_space": {
+   "n": 146,
+   "fwd_mdd": -0.06534960004237142,
+   "fwd_ret": 0.017577236571686656
+  },
+  "pattern_abs_move": {
+   "상승쐐기": {
+    "n": 34,
+    "abs_ret": 0.08220168643008721
+   },
+   "삼각수렴": {
+    "n": 28,
+    "abs_ret": 0.08548702946693743
+   },
+   "하락쐐기": {
+    "n": 28,
+    "abs_ret": 0.05309269326641913
+   }
+  }
+ },
+ "000660.KS": {
+  "symbol": "000660.KS",
+  "days": 178,
+  "confluence": {
+   "n": 21,
+   "touch": 0.8571428571428571,
+   "react_given_touch": 0.6666666666666666,
+   "break_given_touch": 0.7777777777777778,
+   "n_touch": 18
+  },
+  "single_level": {
+   "n": 34,
+   "touch": 0.8823529411764706,
+   "react_given_touch": 0.4,
+   "break_given_touch": 0.6,
+   "n_touch": 30
+  },
+  "dummy_3pct": {
+   "n": 178,
+   "touch": 0.7134831460674157,
+   "react_given_touch": 0.6377952755905512,
+   "break_given_touch": 0.5984251968503937,
+   "n_touch": 127
+  },
+  "base_fwd_ret": 0.026257552296563662,
+  "base_fwd_mdd": -0.07605037774388886,
+  "tl_break": {
+   "n": 24,
+   "fwd_ret": 0.018595130534059017,
+   "win": 0.5416666666666666
+  },
+  "rsi_lt30": {
+   "n": 0,
+   "fwd_ret": null,
+   "win": null
+  },
+  "near_conf": {
+   "n": 21,
+   "fwd_mdd": -0.08167998265429721,
+   "fwd_ret": 0.00713711105540563
+  },
+  "empty_space": {
+   "n": 134,
+   "fwd_mdd": -0.07253593681832726,
+   "fwd_ret": 0.039164378375451885
+  },
+  "pattern_abs_move": {
+   "상승쐐기": {
+    "n": 36,
+    "abs_ret": 0.0963108462524432
+   },
+   "삼각수렴": {
+    "n": 50,
+    "abs_ret": 0.11869703909308907
+   },
+   "하락쐐기": {
+    "n": 8,
+    "abs_ret": 0.11061257072550952
+   }
+  }
+ }
+}
