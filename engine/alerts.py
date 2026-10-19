@@ -49,7 +49,9 @@ def rules_for(sym, r, jd, pos):
             A.append(dict(rule="하단선 이탈", level="dn", key=f"{sym}:tl_lower_break:{asof}", text=f"하단 추세선 {f(v)} 아래로 종가 마감 {f(c)} — 채널 이탈."))
     # 3) 합류 구간 진입 (±2%)
     for g in r.get("confluence") or []:
-        A.append(dict(rule="합류 구간", level="ok", key=f"{sym}:conf:{round(g['price'], 2)}", text=f"★합류 {f(g['price'])} ({pct(g['price'], c):+.1f}%): {' + '.join(g['lines'])} — 반응 확인 후 판단(백테스트: 튀는 자리, 바닥 보장 아님)."))
+        below = g["price"] < c
+        A.append(dict(rule="합류 받침" if below else "합류 천장", level="ok" if below else "warn", key=f"{sym}:conf:{round(g['price'], 2)}",
+                      text=f"★{f(g['price'])} ({pct(g['price'], c):+.1f}%) = {' + '.join(g['lines'])} — " + ("튀어오를 수 있는 자리. 반등 확인 후 판단(바닥 보장 아님)." if below else "막힐 수 있는 자리. 종가로 넘으면 의미 큼.")))
     # 보조) 관찰 종목 진입 조건 충족
     if jd and jd.get("chip") == "enter":
         A.append(dict(rule="진입 조건", level="up", key=f"{sym}:enter:{asof}", text=jd["status"]))

@@ -138,7 +138,7 @@ async function renderDesk() {
     const lv = [];
     if (jd?.held && jd.stop) lv.push({ label: '손절', price: jd.stop, color: C.dn });
     else { const sup = r.levels.filter(l => l.price < c).sort((x, y) => y.price - x.price)[0]; lv.push(sup ? { label: '지지', price: sup.price, color: C.ok } : { label: '최근저가', price: r.keys.recent_low10, color: C.dn }); }
-    if (r.confluence?.[0]) lv.push({ label: '★합류', price: r.confluence[0].price, color: C.ok });
+    r.confluence?.slice(0, 2).forEach(g => lv.push({ label: g.price < c ? '★받침' : '★천장', price: g.price, color: g.price < c ? C.ok : C.warn }));
     if (r.trend_upper) lv.push({ label: '추세선', price: r.trend_upper.value_today, color: C.warn });
     const t1 = (jd?.rows?.[0]?.cond || '').match(/≥ ([\d,.]+)/); if (t1) lv.push({ label: jd.held ? '목표' : '진입', price: +t1[1].replace(/,/g, ''), color: C.up });
     const uniq = []; lv.forEach(x => { if (!uniq.some(u => Math.abs(u.price / x.price - 1) < 0.006)) uniq.push(x); });
@@ -177,7 +177,8 @@ async function renderTicker(sym) {
   const sup = r.levels.filter(l => l.price < c).sort((x, y) => y.price - x.price)[0];
   const res = r.levels.filter(l => l.price >= c).sort((x, y) => x.price - y.price)[0];
   const tl = r.trend_upper;
-  const headline = jd?.status || (conf.length ? `★ 합류 ${f(conf[0].price)} 근처 — 멈출 가능성 높은 자리` : '기준선 사이 빈 공간');
+  const cb = conf.find(g => g.price < c), ca = conf.find(g => g.price >= c);
+  const headline = jd?.status || (cb ? `★ 받침 ${f(cb.price)} 바로 위 — 튀어오를 수 있는 자리, 반등 확인 전` : ca ? `★ 천장 ${f(ca.price)} 바로 아래 — 막힐 수 있는 자리` : '기준선 사이 빈 공간');
   let board = '';
   if (jd?.rows?.length) {
     const nums = jd.rows.map(x => (x.cond.match(/[\d,.]+/g) || []).map(n => +n.replace(/,/g, '')));
@@ -208,7 +209,7 @@ async function renderTicker(sym) {
       <span class="mono ${cls(chg)}" style="font-size:22px;font-weight:600">${f(c)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>
       <span class="mut mono" style="font-size:11px">${r.asof} 종가</span>${jd ? `<span style="margin-left:auto">${chip(jd)}</span>` : ''}</div>
     <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}<small>${esc(PLAIN[jd?.chip] || (conf.length ? '유명한 선 여러 개가 겹치는 가격 근처예요. 한 번 튀어오를 수는 있지만 바닥이 확정된 건 아니에요.' : '가까운 기준선이 없어서 다음 기준선까지 미끄러질 수 있어요.'))}</small></div>
-    ${(() => { const items = [...((AL?.alerts || []).filter(x => x.symbol === sym).map(x => ({ t: x.text, lv: x.level, rule: x.rule }))), ...((jd?.watch_today || []).filter(x => !(x.startsWith('★') && (AL?.alerts || []).some(a => a.symbol === sym && a.rule === '합류 구간'))).map(x => ({ t: x, lv: 'mut' })))];
+    ${(() => { const items = [...((AL?.alerts || []).filter(x => x.symbol === sym).map(x => ({ t: x.text, lv: x.level, rule: x.rule }))), ...((jd?.watch_today || []).filter(x => !(x.startsWith('★') && (AL?.alerts || []).some(a => a.symbol === sym && a.rule.startsWith('합류')))).map(x => ({ t: x, lv: 'mut' })))];
       if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
       return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
     ${sig}
@@ -218,7 +219,7 @@ async function renderTicker(sym) {
     </div>
     <div class="grid2b">${board}${attr}</div>
     <section><header><span>★ ${term('합류')} · 반대 근거</span><small>유명한 선이 겹치는 자리</small></header><div class="sent">
-      ${conf.length ? conf.map(g => `<div class="conf">★ ${f(g.price)} (${sgn(pct(g.price, c))}) = ${esc(g.lines.join(' + '))}</div>`).join('') : '<div class="mut">현재가 ±2% 안에 겹치는 선 없음 — 다음 선까지 미끄러질 수 있음</div>'}
+      ${conf.length ? conf.map(g => `<div class="conf ${g.price < c ? '' : 'warn'}">★ ${g.price < c ? '받침' : '천장'} ${f(g.price)} (${sgn(pct(g.price, c))}) = ${esc(g.lines.join(' + '))}</div>`).join('') : '<div class="mut">현재가 ±2% 안에 겹치는 선 없음 — 다음 선까지 미끄러질 수 있음</div>'}
       <div class="counter">${esc(r.sentences.find(x => x.startsWith('반대 근거')) || '')}</div></div></section>
     <details class="more"><summary>자세한 해석 ${r.sentences.length}줄 · 정적 이미지</summary>
       <div class="sent">${r.sentences.map(s => `<div>· ${esc(s)}</div>`).join('')}</div>

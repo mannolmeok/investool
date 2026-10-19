@@ -447,8 +447,13 @@ def analyze_df(df: pd.DataFrame, symbol: str) -> dict:
     # 합류
     if conf:
         for g in conf:
-            S.append(f"★ 합류 구간 {f(g['price'])} ({pct(g['price'], close):+.1f}%): " + " + ".join(g["lines"])
-                     + " — 유명한 선 여러 개가 겹치는 자리. 여기서 한 번 반응(반등)할 가능성이 높지만 바닥 보장은 아님 → 반응 확인 후 진입.")
+            g["side"] = "below" if g["price"] < close else "above"
+            if g["side"] == "below":
+                S.append(f"★ 합류(아래) {f(g['price'])} ({pct(g['price'], close):+.1f}%): " + " + ".join(g["lines"])
+                         + " — 유명한 선이 겹치는 받침. 한 번 튀어오를 가능성이 높지만 바닥 보장은 아님 → 반등 확인 후 진입.")
+            else:
+                S.append(f"★ 합류(위) {f(g['price'])} ({pct(g['price'], close):+.1f}%): " + " + ".join(g["lines"])
+                         + " — 유명한 선이 겹치는 천장. 여기서 막힐 가능성이 높고, 종가로 넘으면 의미가 큼.")
     else:
         S.append("현재가 ±2% 안에 겹치는 유명한 선 없음 — 기준선 사이 '빈 공간'. 다음 선까지 미끄러질 수 있음.")
     # 반대 근거 (필수 1줄)
