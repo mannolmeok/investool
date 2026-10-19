@@ -128,6 +128,8 @@ async function renderDesk() {
   const [syms, J, A, AL, EV] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json')]);
   const items = (await Promise.all(syms.map(async s => ({ s, r: await j(`out/${s}.json`), rows: await loadCsv(s) })))).filter(x => x.r);
   const ctx = [['^KS11', '코스피'], ['^KQ11', '코스닥'], ['^GSPC', 'S&P 500'], ['^VIX', 'VIX 공포지수']];
+  const sect = await Promise.all([['SOXX', '반도체 ETF'], ['IONQ', '아이온큐'], ['RGTI', '리게티'], ['QBTS', '디웨이브']].map(async ([s, n]) => ({ s, n, rows: await loadCsv(s) })));
+  const sectH = sect.filter(m => m.rows.length > 2).map(m => { const l = m.rows[m.rows.length - 1], p = m.rows[m.rows.length - 2]; const ch = pct(l.close, p.close); return `<span class="sc"><b>${m.n}</b> <span class="mono ${cls(ch)}">${sgn(ch)}</span></span>`; }).join('');
   const mk = await Promise.all(ctx.map(async ([s, n]) => ({ s, n, rows: await loadCsv(s) })));
   const mkt = mk.filter(m => m.rows.length > 2).map(m => {
     const last = m.rows[m.rows.length - 1], prev = m.rows[m.rows.length - 2];
@@ -177,6 +179,7 @@ async function renderDesk() {
     ${eventsStrip(EV, J)}
     <div class="mut" style="font-size:12px;padding:2px 2px 0">시장 맥락</div>
     <div class="mkts">${mkt || '<div class="mut" style="padding:8px 12px">시장 지표는 다음 배치 후 표시</div>'}</div>
+    ${sectH ? `<div class="sects"><span class="mut">업종 맥락</span>${sectH}</div>` : ''}
     <details class="rules"><summary>규칙 3줄</summary><div class="sent"><div>· 모든 판단은 종가 기준. 장중 흔들림은 무시.</div><div>· 손절선 없이 매수 없음. 반등 확인 전 물타기 금지.</div><div>· 문장은 가능성 표현. 확률 숫자 없음. 반대 근거 1줄 필수.</div></div></details>`;
   bindTerms();
   $('#foot').textContent = `읽음 ${stamp()}`;
