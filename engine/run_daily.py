@@ -8,6 +8,7 @@ sys.path.insert(0, str(ROOT / "engine"))
 from lines import analyze
 from render import render
 from judge import main as judge_main
+from attribution import main as attribution_main
 
 KST = timezone(timedelta(hours=9))
 
@@ -26,7 +27,11 @@ def main():
         md.append(f"![{s}](./{s}.png)")
         md += ["- " + x for x in r["sentences"]]
         md.append("")
+    at = attribution_main()
     jd = judge_main()
+    md.append("## 급락/급등 원인 분해")
+    for sym, a in at.items(): md.append(f"- {a['sentence']}")
+    md.append("")
     md.append("## 판단 보드")
     for sym, j in jd.items():
         md.append(f"- **{sym}** [{j.get('chip')}] {j['status']}")

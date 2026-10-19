@@ -6,7 +6,7 @@
 import sys, json, time
 from pathlib import Path
 from datetime import datetime, timezone
-import urllib.request
+import urllib.request, urllib.parse
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
@@ -15,7 +15,7 @@ UA = {"User-Agent": "Mozilla/5.0 (investool daily batch)"}
 
 
 def fetch(sym: str) -> int:
-    req = urllib.request.Request(URL.format(sym=sym), headers=UA)
+    req = urllib.request.Request(URL.format(sym=urllib.parse.quote(sym)), headers=UA)
     with urllib.request.urlopen(req, timeout=30) as r:
         j = json.load(r)
     res = j["chart"]["result"][0]
@@ -35,7 +35,10 @@ def fetch(sym: str) -> int:
 
 
 if __name__ == "__main__":
-    syms = sys.argv[1:] or [s.strip() for s in (ROOT / "watchlist.txt").read_text().splitlines() if s.strip() and not s.startswith("#")]
+    def read_list(name):
+        f = ROOT / name
+        return [s.strip() for s in f.read_text().splitlines() if s.strip() and not s.startswith("#")] if f.exists() else []
+    syms = sys.argv[1:] or (read_list("watchlist.txt") + read_list("context.txt"))
     for s in syms:
         try:
             n = fetch(s)

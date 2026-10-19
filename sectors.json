@@ -1,0 +1,6 @@
+{
+  "_doc": "종목별 지수(index)와 업종 대리(peers). 급락 원인 = 지수 기여 / 업종 기여 / 종목 고유 로 분해",
+  "INFQ":      { "index": "^GSPC", "peers": ["IONQ", "RGTI", "QBTS"], "sector": "양자" },
+  "005930.KS": { "index": "^KS11", "peers": ["000660.KS", "SOXX"],    "sector": "반도체" },
+  "000660.KS": { "index": "^KS11", "peers": ["005930.KS", "SOXX"],    "sector": "반도체" }
+}

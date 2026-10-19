@@ -30,6 +30,21 @@ function judgeBoard(j, k) {
     ${plan ? `<div style="padding:0 12px 10px">${plan}</div>` : ''}
     <div class="sent" style="border-top:1px solid var(--line)"><div class="mut" style="padding-left:0;text-indent:0">오늘 볼 것</div>${wt}${j.note ? `<div class="mut">메모: ${j.note}</div>` : ''}</div></section>`;
 }
+let _attr = null;
+async function loadAttr() { if (_attr) return _attr; try { _attr = await (await fetch('out/attribution.json', { cache: 'no-store' })).json(); } catch { _attr = {}; } return _attr; }
+function attrBox(a) {
+  const f = v => (v == null ? '—' : (v >= 0 ? '+' : '') + v.toFixed(1) + '%');
+  const row = (n, v, sub) => `<div class="jrow"><span class="mono ${cls(v || 0)}">${f(v)}</span><span>${n}${sub ? ` <span class="mut">${sub}</span>` : ''}</span></div>`;
+  return `<section><header><span>급락/급등 원인 분해 · ${a.asof}</span><small>하루 수익률 = 지수 + 업종 + 종목 고유</small></header>
+    <div class="jrows">
+      ${row('종목 하루 수익률', a.ret1, `5일 ${f(a.ret5)}`)}
+      ${a.index ? row('지수 기여', a.index.contrib, `${a.index.symbol} ${f(a.index.ret1)} × β${a.index.beta.toFixed(1)}`) : ''}
+      ${a.sector ? row('업종 기여', a.sector.excess1, `${a.sector.name} 피어 평균 ${f(a.sector.ret1)} (${a.sector.peers.join(', ')})`) : ''}
+      ${row('종목 고유', a.idio, a.main_driver === '종목 고유' ? '<b class="warn">주원인</b>' : '')}
+      ${row('거래량 / 20일', a.volume_ratio != null ? (a.volume_ratio - 1) * 100 : null, a.kind)}
+    </div>
+    <div class="sent"><div>· 주원인: <b class="w">${a.main_driver}</b>. ${a.sentence.split('. ').slice(-1)[0]}</div></div></section>`;
+}
 async function loadJson(sym) { try { return await (await fetch(`out/${sym}.json`, { cache: 'no-store' })).json(); } catch { return null; } }
 async function loadCsv(sym) {
   const t = await (await fetch(`data/${sym}.csv`, { cache: 'no-store' })).text();
@@ -78,7 +93,8 @@ async function renderDesk() {
 /* ---------------- 종목 페이지 ---------------- */
 async function renderTicker(sym) {
   setNav('desk');
-  const [r, rows, J] = await Promise.all([loadJson(sym), loadCsv(sym), loadJudge()]);
+  const [r, rows, J, A] = await Promise.all([loadJson(sym), loadCsv(sym), loadJudge(), loadAttr()]);
+  const a = A[sym];
   const j = J[sym];
   if (!r) { main.innerHTML = `<div class="bar"><h1>${sym}</h1><span class="mut">분석 결과 없음 — 다음 배치 후 생성</span></div>`; return; }
   const k = r.krw, c = r.close, f = v => fmtP(v, k);
@@ -112,6 +128,7 @@ async function renderTicker(sym) {
       <section><header><span>선 목록 · 오늘 값</span><small>현재가 대비</small></header><div class="lines">${lt}</div></section>
     </div>
     ${judgeBoard(j, k)}
+    ${a ? attrBox(a) : ''}
     <section><header><span>해석</span><small>규칙 기반 · 가능성 표현 · 반대 근거 포함</small></header>
       <div class="sent">${r.sentences.map(s => `<div class="${s.startsWith('★') ? 'conf' : s.startsWith('반대 근거') ? 'counter' : ''}">· ${s}</div>`).join('')}</div></section>
     <section><header><span>정적 이미지</span><small>배치가 만든 PNG (동일 내용)</small></header><img src="out/${sym}.png" style="width:100%;display:block"></section>`;
