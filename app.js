@@ -60,12 +60,12 @@ function levelBar(items, close, krw) {
   return `<div class="lb"><div class="lb-track"></div>${marks}<div class="lb-now" style="left:${x(close).toFixed(1)}%"><i></i></div></div>`;
 }
 /* 3구간 바 (판단 보드) */
-function zoneBar(stop, top, close, krw) {
+function zoneBar(stop, top, close, krw, labels = ['정리', '보유 · 추가 매수 금지', '돌파 → 다음 차수']) {
   const lo = Math.min(stop, close) * 0.97, hi = Math.max(top, close) * 1.03;
   const x = p => ((p - lo) / (hi - lo) * 100);
   const seg = (cl, l, w, txt) => `<div class="zb-seg ${cl}" style="left:${l.toFixed(1)}%;width:${w.toFixed(1)}%">${w > 14 ? `<span>${txt}</span>` : ''}</div>`;
   return `<div class="zb">
-    ${seg('dn', 0, x(stop), '정리')}${seg('warn', x(stop), x(top) - x(stop), '보유 · 추가 매수 금지')}${seg('up', x(top), 100 - x(top), '돌파 → 다음 차수')}
+    ${seg('dn', 0, x(stop), esc(labels[0]))}${seg('warn', x(stop), x(top) - x(stop), esc(labels[1]))}${seg('up', x(top), 100 - x(top), esc(labels[2]))}
     <div class="zb-tick" style="left:${x(stop).toFixed(1)}%"><span class="mono">${fmtP(stop, krw)}</span></div>
     <div class="zb-tick" style="left:${x(top).toFixed(1)}%"><span class="mono">${fmtP(top, krw)}</span></div>
     <div class="zb-now" style="left:${x(close).toFixed(1)}%"><span class="mono">현재 ${fmtP(close, krw)}</span><i></i></div>
@@ -108,6 +108,15 @@ function contribBar(a) {
   const tot = Math.max(1e-6, parts.reduce((s, p) => s + Math.abs(p[1]), 0));
   return `<div class="cb">${parts.map(([n, v, col]) => `<div class="cb-seg" style="width:${(Math.abs(v) / tot * 100).toFixed(1)}%;background:${col};opacity:${v < 0 ? .95 : .55}">${Math.abs(v) / tot > 0.14 ? `<span>${n} ${sgn(v)}</span>` : ''}</div>`).join('')}</div>`;
 }
+function eventsStrip(EV, J, sym) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const evs = ((EV && EV.events) || []).filter(e => new Date(e.date) >= today && (!sym || !e.symbols.length || e.symbols.includes(sym))).sort((a, b) => a.date.localeCompare(b.date)).slice(0, sym ? 4 : 6);
+  if (!evs.length) return '';
+  const K = { '실적': 'up', '거시': 'warn', '정책': 'tag', '종목': 'ok' };
+  return `<section><header><span>${sym ? '이 종목 관련 일정' : '앞으로 2주'}</span><small>events.json</small></header><div class="ev-list">${evs.map(e => {
+    const d = Math.round((new Date(e.date) - today) / 864e5);
+    return `<div class="ev"><span class="mono ${d <= 3 ? 'warn' : 'mut'}">${e.date.slice(5).replace('-', '/')}<small>D-${d}</small></span><span class="chip ${K[e.kind] || 'mut'}" style="${e.kind === '정책' ? 'color:var(--tag)' : ''}">${esc(e.kind)}</span><span><b class="w">${esc(e.title)}</b>${e.symbols.length ? ` <span class="mut">${e.symbols.map(x => nameOf(x, J)).join(', ')}</span>` : ''}${e.note ? `<div class="mut" style="font-size:11.5px">${esc(e.note)}</div>` : ''}</span></div>`; }).join('')}</div></section>`;
+}
 function chip(jd) {
   const M = { exit: ['정리', 'dn'], warn: ['주의', 'warn'], hold: ['보유', 'ok'], target: ['목표', 'ok'], enter: ['진입', 'ok'], wait: ['관망', 'mut'], none: ['—', 'mut'] };
   const [tx, c] = M[jd?.chip] || M.none; return `<span class="chip ${c}">${tx}</span>`;
@@ -116,7 +125,7 @@ function chip(jd) {
 /* ------------------------------------------------------------ 데스크 */
 async function renderDesk() {
   setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const [syms, J, A, AL] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json')]);
+  const [syms, J, A, AL, EV] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json')]);
   const items = (await Promise.all(syms.map(async s => ({ s, r: await j(`out/${s}.json`), rows: await loadCsv(s) })))).filter(x => x.r);
   const ctx = [['^KS11', '코스피'], ['^KQ11', '코스닥'], ['^GSPC', 'S&P 500'], ['^VIX', 'VIX 공포지수']];
   const mk = await Promise.all(ctx.map(async ([s, n]) => ({ s, n, rows: await loadCsv(s) })));
@@ -163,6 +172,7 @@ async function renderDesk() {
       return `<section class="alerts"><header><span>오늘 알림 ${al.length}</span><small>규칙당 하루 1회 · ${AL.asof}</small></header><div class="al-list">${head}${rest ? `<details class="al-more"><summary>${sorted.length - 4}개 더</summary>${rest}</details>` : ''}</div></section>`; })()}
     <div class="sumrow">${sum || '<span class="mut">판단 결과 없음</span>'}<span class="mut" style="margin-left:auto;font-size:11px">카드 탭 → 종목 페이지</span></div>
     <div class="cards">${cards}</div>
+    ${eventsStrip(EV, J)}
     <div class="mut" style="font-size:12px;padding:2px 2px 0">시장 맥락</div>
     <div class="mkts">${mkt || '<div class="mut" style="padding:8px 12px">시장 지표는 다음 배치 후 표시</div>'}</div>
     <details class="rules"><summary>규칙 3줄</summary><div class="sent"><div>· 모든 판단은 종가 기준. 장중 흔들림은 무시.</div><div>· 손절선 없이 매수 없음. 반등 확인 전 물타기 금지.</div><div>· 문장은 가능성 표현. 확률 숫자 없음. 반대 근거 1줄 필수.</div></div></details>`;
@@ -173,7 +183,7 @@ async function renderDesk() {
 /* ------------------------------------------------------------ 종목 페이지 */
 async function renderTicker(sym) {
   setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const [r, rows, J, A, AL] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json')]);
+  const [r, rows, J, A, AL, EV] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json')]);
   if (!r) { main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1>${esc(sym)}</h1><span class="mut">분석 결과 없음 — 다음 배치 후 생성</span></div>`; return; }
   const jd = J?.[sym], a = A?.[sym], k = r.krw, c = r.close, f = v => fmtP(v, k);
   const chg = r.rsi_volume.chg_pct, rv = r.rsi_volume;
@@ -188,7 +198,8 @@ async function renderTicker(sym) {
   if (jd?.rows?.length) {
     const nums = jd.rows.map(x => (x.cond.match(/[\d,.]+/g) || []).map(n => +n.replace(/,/g, '')));
     const top = nums[0]?.[0], stop = nums[nums.length - 1]?.[0];
-    const zb = (top && stop && top > stop) ? zoneBar(stop, top, c, k) : '';
+    const short = a => a.split(/[·→—(]/)[0].trim();
+    const zb = (top && stop && top > stop) ? zoneBar(stop, top, c, k, [short(jd.rows[jd.rows.length - 1].action), short(jd.rows[1]?.action || '관망'), short(jd.rows[0].action)]) : '';
     const rowsH = jd.rows.map(x => `<div class="jrow ${x.tone}"><span class="mono">${esc(x.cond)}</span><span>${esc(x.action)}</span></div>`).join('');
     const risk = jd.held ? `<div class="kv"><span>보유</span><b class="mono">${jd.qty}주 @ ${f(jd.avg)}</b><span>손익</span><b class="mono ${cls(jd.pnl_pct)}">${sgn(jd.pnl_pct)}</b>${jd.stop ? `<span>${term('손절')}</span><b class="mono">${f(jd.stop)}</b><span>여유</span><b class="mono ${jd.stop_room_pct < 1 ? 'warn' : ''}">${jd.stop_room_pct.toFixed(1)}%</b>` : ''}</div>` : '';
     const flags = (jd.flags || []).map(x => `<div class="flag">! ${esc(x)}</div>`).join('');
@@ -221,7 +232,7 @@ async function renderTicker(sym) {
       <section><header><span>일봉 · 선 8종</span><small>확대·이동 가능 · 상승 빨강 / 하락 파랑</small></header><div id="chart"></div></section>
       <section><header><span>선 사다리</span><small>차트 구간의 선 · 현재가 기준</small></header>${ladder(r, rows)}</section>
     </div>
-    <div class="grid2b">${board}${attr}</div>
+    <div class="grid2b">${board}${attr}${eventsStrip(EV, J, sym)}</div>
     <section><header><span>★ ${term('합류')} · 반대 근거</span><small>유명한 선이 겹치는 자리</small></header><div class="sent">
       ${conf.length ? conf.map(g => `<div class="conf ${g.price < c ? '' : 'warn'}">★ ${g.price < c ? '받침' : '천장'} ${f(g.price)} (${sgn(pct(g.price, c))}) = ${esc(g.lines.join(' + '))}</div>`).join('') : '<div class="mut">현재가 ±2% 안에 겹치는 선 없음 — 다음 선까지 미끄러질 수 있음</div>'}
       <div class="counter">${esc(r.sentences.find(x => x.startsWith('반대 근거')) || '')}</div></div></section>

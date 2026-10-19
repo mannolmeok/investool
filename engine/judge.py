@@ -89,6 +89,14 @@ def judge_one(p: dict, r: dict, rules: dict) -> dict:
         else:
             cb = [g for g in conf if g["price"] < close]; ca = [g for g in conf if g["price"] >= close]
             rv0 = r.get("rsi_volume", {})
+            # 관찰 종목 기본 3행: 위 기준(추세선/천장) · 사이 · 아래 기준(받침/최근 저가)
+            up_ref = tl_val if tl_val else (ca[0]["price"] if ca else None)
+            sup_levels = [l["price"] for l in r.get("levels", []) if l["price"] < close]
+            dn_ref = (cb[0]["price"] if cb else max(sup_levels) if sup_levels else r.get("keys", {}).get("recent_low10"))
+            if up_ref and dn_ref and up_ref > dn_ref:
+                rows.append({"cond": f"≥ {f(up_ref)} 종가", "action": ("하락 추세선 돌파 → 전환 1차, 1/3 검토" if tl_val else "천장 돌파 → 관심 ↑"), "tone": "up"})
+                rows.append({"cond": f"{f(dn_ref)} ~ {f(up_ref)}", "action": "관망 · 기준선 사이", "tone": "warn"})
+                rows.append({"cond": f"< {f(dn_ref)}", "action": "받침 이탈 → 다음 기준선까지 미끄러질 수 있음, 관심 해제 검토", "tone": "down"})
             if cb:
                 status, chip = f"관망 — ★받침 {f(cb[0]['price'])} ({pct(cb[0]['price'], close):+.1f}%) 위. 반등 확인 전 진입 없음", "wait"
             elif ca:

@@ -36,7 +36,7 @@ section>header{padding:8px 12px;background:var(--panel);font-weight:600;display:
 section>header small{color:var(--mut);font-weight:400;font-size:11px}
 .sent{padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:1.55}
 .sent div{padding-left:14px;text-indent:-14px}
-.sent .conf{color:var(--ok);font-weight:600}.sent .counter{color:var(--mut)}
+.sent .conf{color:var(--ok);font-weight:600}.sent .conf.warn{color:var(--warn)}.sent .counter{color:var(--mut)}
 .headline{font-size:16px;font-weight:700;color:var(--w);padding:12px 14px;border-left:3px solid var(--mut);background:var(--panel);border-radius:0 6px 6px 0}
 .headline small{display:block;font-size:12.5px;font-weight:400;color:var(--dim);margin-top:4px;line-height:1.5}
 .headline.dn{border-color:var(--dn)}.headline.warn{border-color:var(--warn)}.headline.ok{border-color:var(--ok)}
@@ -114,6 +114,10 @@ section>header small{color:var(--mut);font-weight:400;font-size:11px}
 .al{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--line);text-decoration:none;font-size:12.5px}
 .al:first-child{border-top:0}.al:hover{background:#222}
 .al-more{border:0;border-top:1px solid var(--line);border-radius:0}.al-more summary{background:transparent;color:var(--mut);font-weight:400}
+/* 이벤트 */
+.ev-list{display:flex;flex-direction:column}
+.ev{display:grid;grid-template-columns:64px auto 1fr;gap:10px;align-items:start;padding:8px 12px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.45}
+.ev:first-child{border-top:0}.ev small{display:block;font-size:10px;color:var(--mut)}
 /* 오늘 볼 것 */
 .todo-list{display:flex;flex-direction:column}
 .todo-i{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:start;padding:9px 12px;border-top:1px solid var(--line);font-size:13px;line-height:1.5;cursor:pointer}
