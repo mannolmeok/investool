@@ -12,6 +12,24 @@ async function loadWatchlist() {
   const t = await (await fetch('watchlist.txt', { cache: 'no-store' })).text();
   return t.split('\n').map(s => s.trim()).filter(s => s && !s.startsWith('#'));
 }
+let _judge = null;
+async function loadJudge() { if (_judge) return _judge; try { _judge = await (await fetch('out/judgement.json', { cache: 'no-store' })).json(); } catch { _judge = {}; } return _judge; }
+const CHIP = { exit: ['정리', 'dn'], warn: ['주의', 'warn'], hold: ['보유', 'ok'], target: ['목표', 'ok'], enter: ['진입', 'ok'], wait: ['관망', 'mut'], none: ['—', 'mut'] };
+const chipHtml = j => { const [t, c] = CHIP[j?.chip] || CHIP.none; return `<span class="pill ${c}" style="border-color:currentColor;padding:1px 7px;font-size:11px">${t}</span>`; };
+function judgeBoard(j, k) {
+  if (!j || !j.rows) return '';
+  const f = v => v;
+  const rows = j.rows.map(r => `<div class="jrow ${r.tone}"><span class="mono">${r.cond}</span><span>${r.action}</span></div>`).join('');
+  const plan = (j.plan || []).length ? `<table style="margin-top:6px"><thead><tr><th>차수</th><th>조건</th><th>금액</th><th>상태</th></tr></thead><tbody>${j.plan.map(p => `<tr><td class="mono">${p.n}차</td><td>${p.cond}</td><td class="mono">${p.amount}</td><td class="${/체결/.test(p.status) ? 'ok' : 'mut'}">${p.status}</td></tr>`).join('')}</tbody></table>` : '';
+  const flags = (j.flags || []).map(x => `<div class="warn">! ${x}</div>`).join('');
+  const wt = (j.watch_today || []).map(x => `<div>· ${x}</div>`).join('');
+  const risk = j.held ? `<div class="mut">보유 ${j.qty}주 @ ${fmtP(j.avg, k)} · 손익 <b class="${cls(j.pnl_pct)}">${sgn(j.pnl_pct)}</b>${j.stop ? ` · 손절 ${fmtP(j.stop, k)} (여유 <b class="${j.stop_room_pct < 1 ? 'warn' : ''}">${j.stop_room_pct.toFixed(1)}%</b>)` : ''}${j.r_now != null ? ` · 현재 ${j.r_now.toFixed(2)}R` : ''}</div>` : '';
+  return `<section><header><span>판단 보드 · 종가 기준</span>${chipHtml(j)}</header>
+    <div class="sent"><div class="w" style="font-weight:600">${j.status}</div>${risk}${flags}</div>
+    <div class="jrows">${rows}</div>
+    ${plan ? `<div style="padding:0 12px 10px">${plan}</div>` : ''}
+    <div class="sent" style="border-top:1px solid var(--line)"><div class="mut" style="padding-left:0;text-indent:0">오늘 볼 것</div>${wt}${j.note ? `<div class="mut">메모: ${j.note}</div>` : ''}</div></section>`;
+}
 async function loadJson(sym) { try { return await (await fetch(`out/${sym}.json`, { cache: 'no-store' })).json(); } catch { return null; } }
 async function loadCsv(sym) {
   const t = await (await fetch(`data/${sym}.csv`, { cache: 'no-store' })).text();
@@ -26,13 +44,15 @@ function stamp() { const d = new Date(); return d.toLocaleString('ko-KR', { hour
 async function renderDesk() {
   setNav('desk');
   const syms = await loadWatchlist();
+  const J = await loadJudge();
   const items = (await Promise.all(syms.map(async s => ({ s, r: await loadJson(s) })))).filter(x => x.r);
   const rows = items.map(({ s, r }) => {
+    const j = J[s];
     const k = r.krw, c = r.close;
     const ma20 = r.ma.sma20?.value, tl = r.trend_upper?.value_today, conf = r.confluence?.[0];
     const sup = r.levels.filter(l => l.price < c).sort((a, b) => b.price - a.price)[0];
     const chg = r.rsi_volume.chg_pct;
-    const status = conf ? `<span class="ok">★ 합류 ${fmtP(conf.price, k)}</span>` : r.pattern?.type ? `<span class="warn">${r.pattern.type}</span>` : '<span class="mut">빈 공간</span>';
+    const status = j ? `${chipHtml(j)} <span class="dim" style="font-size:11px">${j.status}</span>` : conf ? `<span class="ok">★ 합류 ${fmtP(conf.price, k)}</span>` : r.pattern?.type ? `<span class="warn">${r.pattern.type}</span>` : '<span class="mut">빈 공간</span>';
     return `<tr class="r" onclick="location.hash='#/t/${s}'">
       <td class="w">${s}<div class="mut" style="font-size:11px">${r.asof}</div></td>
       <td class="mono ${cls(chg)}">${fmtP(c, k)}<div style="font-size:11px">${sgn(chg)}</div></td>
@@ -58,7 +78,8 @@ async function renderDesk() {
 /* ---------------- 종목 페이지 ---------------- */
 async function renderTicker(sym) {
   setNav('desk');
-  const [r, rows] = await Promise.all([loadJson(sym), loadCsv(sym)]);
+  const [r, rows, J] = await Promise.all([loadJson(sym), loadCsv(sym), loadJudge()]);
+  const j = J[sym];
   if (!r) { main.innerHTML = `<div class="bar"><h1>${sym}</h1><span class="mut">분석 결과 없음 — 다음 배치 후 생성</span></div>`; return; }
   const k = r.krw, c = r.close, f = v => fmtP(v, k);
   const conf = r.confluence || [];
@@ -90,6 +111,7 @@ async function renderTicker(sym) {
         </div></section>
       <section><header><span>선 목록 · 오늘 값</span><small>현재가 대비</small></header><div class="lines">${lt}</div></section>
     </div>
+    ${judgeBoard(j, k)}
     <section><header><span>해석</span><small>규칙 기반 · 가능성 표현 · 반대 근거 포함</small></header>
       <div class="sent">${r.sentences.map(s => `<div class="${s.startsWith('★') ? 'conf' : s.startsWith('반대 근거') ? 'counter' : ''}">· ${s}</div>`).join('')}</div></section>
     <section><header><span>정적 이미지</span><small>배치가 만든 PNG (동일 내용)</small></header><img src="out/${sym}.png" style="width:100%;display:block"></section>`;

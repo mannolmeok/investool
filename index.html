@@ -48,6 +48,11 @@ tr.r{cursor:pointer}tr.r:hover td{background:#2C2C2C}
 .lines .n{font-family:'IBM Plex Sans KR'}
 .btn{padding:6px 12px;border-radius:4px;border:1px solid #3A3A3A;background:#161616;color:var(--txt);font:inherit;cursor:pointer}
 .btn.pri{background:#3A3A3A;color:var(--w)}
+.jrows{font-family:'IBM Plex Mono',monospace;font-size:12px}
+.jrow{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:8px 12px;border-top:1px solid var(--line)}
+.jrow span:last-child{font-family:'IBM Plex Sans KR'}
+.jrow.up span:first-child{color:var(--up);font-weight:600}.jrow.warn span:first-child{color:var(--warn);font-weight:600}.jrow.down span:first-child{color:var(--dn);font-weight:600}
+.jrow.warn{background:#262420}
 .tabbar{display:none}
 @media (max-width:860px){
   .app{grid-template-columns:1fr}

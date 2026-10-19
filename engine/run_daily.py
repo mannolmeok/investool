@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "engine"))
 from lines import analyze
 from render import render
+from judge import main as judge_main
 
 KST = timezone(timedelta(hours=9))
 
@@ -25,6 +26,12 @@ def main():
         md.append(f"![{s}](./{s}.png)")
         md += ["- " + x for x in r["sentences"]]
         md.append("")
+    jd = judge_main()
+    md.append("## 판단 보드")
+    for sym, j in jd.items():
+        md.append(f"- **{sym}** [{j.get('chip')}] {j['status']}")
+        for fl in j.get('flags', []): md.append(f"  - ! {fl}")
+    md.append("")
     (out / "summary.md").write_text("\n".join(md), encoding="utf-8")
     print("\n".join(md))
 
