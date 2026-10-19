@@ -24,7 +24,7 @@ def rets(df, n):
 
 
 def beta(a: pd.Series, b: pd.Series, n=60):
-    j = pd.concat([a, b], axis=1).dropna().iloc[-n:]
+    j = pd.concat([a, b], axis=1, sort=True).dropna().iloc[-n:]
     if len(j) < 20:
         return 1.0
     ra, rb = j.iloc[:, 0].pct_change().dropna(), j.iloc[:, 1].pct_change().dropna()

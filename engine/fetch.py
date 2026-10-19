@@ -21,6 +21,14 @@ def fetch(sym: str) -> int:
     res = j["chart"]["result"][0]
     q = res["indicators"]["quote"][0]
     ts = res["timestamp"]
+    # 장중이면 마지막 봉은 아직 '종가'가 아님 → 버린다 (종가 기준 원칙)
+    meta = res.get("meta", {})
+    reg = (meta.get("currentTradingPeriod") or {}).get("regular") or {}
+    now = int(time.time())
+    if ts and reg and reg.get("start", 0) <= now < reg.get("end", 0) and ts[-1] >= reg.get("start", 0):
+        ts = ts[:-1]
+        for k in q: q[k] = q[k][:-1]
+        print(f"{sym}: 장중 → 마지막 봉 제외")
     krw = sym.endswith((".KS", ".KQ"))
     rows = ["date,open,high,low,close,volume"]
     for i, t in enumerate(ts):

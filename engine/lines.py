@@ -350,6 +350,10 @@ def confluence(close: float, items: list[tuple[str, float]], tol: float = 0.02):
 def analyze(path: str, symbol: str | None = None) -> dict:
     df = load_csv(path)
     symbol = symbol or Path(path).stem
+    return analyze_df(df, symbol)
+
+
+def analyze_df(df: pd.DataFrame, symbol: str) -> dict:
     krw = symbol.endswith(".KS") or symbol.endswith(".KQ")
     close = float(df["close"].iloc[-1])
     asof = str(df["date"].iloc[-1].date())
