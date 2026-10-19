@@ -142,6 +142,8 @@ async function renderDesk() {
   const cnt = {}; items.forEach(({ s }) => { const c = (J?.[s]?.chip) || 'none'; cnt[c] = (cnt[c] || 0) + 1; });
   const order = ['exit', 'warn', 'enter', 'target', 'hold', 'wait'];
   const sum = order.filter(c => cnt[c]).map(c => `${chip({ chip: c })} <b class="mono">${cnt[c]}</b>`).join('<span class="mut" style="margin:0 8px">·</span>');
+  const PR = { exit: 0, warn: 1, enter: 2, target: 3, hold: 4, wait: 5, none: 6 };
+  items.sort((a, b) => (PR[J?.[a.s]?.chip ?? 'none'] - PR[J?.[b.s]?.chip ?? 'none']));
   const cards = items.map(({ s, r, rows }) => {
     const jd = J?.[s], a = A?.[s], k = r.krw, c = r.close;
     const lv = [];
@@ -229,7 +231,8 @@ async function renderTicker(sym) {
       return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
     ${sig}
     <div class="grid2">
-      <section><header><span>일봉 · 선 8종</span><small>확대·이동 가능 · 상승 빨강 / 하락 파랑</small></header><div id="chart"></div></section>
+      <section><header><span>일봉 · 선 8종</span><small>확대·이동 가능</small></header><div id="chart"></div>
+        <div class="clegend"><span><i style="background:${C.ma20}"></i>20일</span><span><i style="background:${C.ma60}"></i>60일</span><span><i style="background:${C.ma120}"></i>120일</span><span><i style="background:${C.ma200}"></i>200일</span><span><i class="dash" style="border-color:${C.ok}"></i>${term('지지')}</span><span><i class="dash" style="border-color:${C.warn}"></i>${term('저항')}·${term('추세선')}</span><span><i class="dash" style="border-color:${C.tag}"></i>${term('피보')}</span><span><i style="background:${C.ok};height:8px"></i>★${term('합류')}</span></div></section>
       <section><header><span>선 사다리</span><small>차트 구간의 선 · 현재가 기준</small></header>${ladder(r, rows)}</section>
     </div>
     <div class="grid2b">${board}${attr}${eventsStrip(EV, J, sym)}</div>
@@ -295,6 +298,7 @@ async function renderSettings() {
       <div>· 브라우저 지원: <b class="${supported ? 'ok' : 'dn'}">${supported ? '됨' : '안 됨'}</b> · 권한: <b>${perm}</b></div>
       ${ios && !standalone ? '<div class="warn">· 아이폰은 공유 → "홈 화면에 추가" 후 그 아이콘으로 열어야 알림이 옵니다.</div>' : ''}
       <div style="text-indent:0;padding-left:0"><button class="btn pri" id="btnNotif">알림 켜기</button> <span class="mut" id="notifMsg"></span></div></div></section>
+    <section><header><span>데이터 상태</span><small>종목별 마지막 종가일</small></header><div class="sent">${Object.values(J || {}).map(x => { const d = x.asof ? Math.round((Date.now() - new Date(x.asof)) / 864e5) : null; return `<div><b class="w">${esc(x.name || x.symbol)}</b> <span class="mono ${d > 4 ? 'warn' : 'mut'}">${x.asof || '—'}${d != null ? ` (${d}일 전)` : ''}</span></div>`; }).join('') || '<div class="mut">—</div>'}<div class="mut">야후 파이낸스 일봉 · 15분 지연 · 장중 봉은 제외 · 국내 봉은 야후 반영이 반나절 늦을 때가 있음</div></div></section>
     <section><header><span>관심 종목</span><small>watchlist.txt</small></header><div class="sent"><div>· 저장소의 <span class="mono">watchlist.txt</span>에 야후 심볼 한 줄 추가 → 다음 배치부터 (코스피 .KS / 코스닥 .KQ)</div></div></section>
     <section><header><span>용어</span><small>탭하면 설명</small></header><div class="sent">${Object.keys(G).map(k => `<div>${term(k)} <span class="mut">${esc(G[k])}</span></div>`).join('')}</div></section>`;
   $('#btnNotif').onclick = async () => {
@@ -316,8 +320,27 @@ async function renderSettings() {
   };
   bindTerms();
 }
-function renderStub(name, phase) { setNav(name); main.innerHTML = `<div class="bar"><h1>${name === 'screener' ? '스크리너' : '일지'}</h1><span class="tag">${phase}</span></div><section><div class="sent"><div class="mut">로드맵 ${phase}에서 구현.</div></div></section>`; }
-
+async function renderScreener() {
+  setNav('screener'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
+  const [syms, J] = await Promise.all([loadWatchlist(), j('out/judgement.json')]);
+  const cand = syms.filter(s => /\.(KQ|KS)$/.test(s) && !['005930.KS', '000660.KS'].includes(s));
+  const items = (await Promise.all(cand.map(async s => ({ s, r: await j(`out/${s}.json`) })))).filter(x => x.r);
+  const row = ({ s, r }) => { const jd = J?.[s], c = r.close, k = r.krw, rv = r.rsi_volume, conf = r.confluence || [];
+    const above = Object.values(r.ma).filter(v => c > v.value).length, n = Object.keys(r.ma).length;
+    return `<a class="scr" href="#/t/${encodeURIComponent(s)}"><b class="w">${nameOf(s, J)}</b><span class="mono ${cls(rv.chg_pct)}">${fmtP(c, k)} ${sgn(rv.chg_pct)}</span><span class="dots">${Object.values(r.ma).map(v => `<i class="${c > v.value ? 'on' : ''}"></i>`).join('')}</span><span class="mono ${rv.rsi < 30 ? 'ok' : rv.rsi > 70 ? 'warn' : 'mut'}">RSI ${rv.rsi.toFixed(0)}</span><span>${conf.length ? `<span class="${conf[0].price < c ? 'ok' : 'warn'}">★${conf[0].price < c ? '받침' : '천장'} ${fmtP(conf[0].price, k)}</span>` : '<span class="mut">—</span>'}</span><span class="dim">${esc(jd?.status || '')}</span></a>`; };
+  main.innerHTML = `<div class="bar"><h1>스크리너</h1><span class="mut">소외 실적주 후보 — 리서치(10/19) 4축 통과 종목의 지금 기술적 상태</span><span class="tag" style="margin-left:auto">P3 미리보기</span></div>
+    <section><header><span>후보 ${items.length}</span><small>이름 · 종가 · 이평 위치 · RSI · 합류 · 판단</small></header><div class="scr-list">${items.map(row).join('')}</div></section>
+    <section><header><span>4축 기준</span><small>B 실적 → C 가격 → A 미주목 → D 촉매</small></header><div class="sent"><div>· B 실적: 영업이익률 15%↑ · 3년 흑자 · 영업이익 증가</div><div>· C 가격: PER 12↓ · PBR 1.5↓ · 52주 하위 40%</div><div>· A 미주목: 분기 리포트 3건↓ · 검색·거래대금 중하위</div><div>· D 촉매: 수주·실적일·밸류업·자사주 중 1개↑</div><div class="mut">재무 자동 스크리닝(pykrx/DART)은 P3에서. 지금은 리서치로 고른 후보의 기술적 상태만 자동.</div></div></section>`;
+}
+async function renderJournal() {
+  setNav('journal'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
+  const J = await j('out/judgement.json');
+  const held = Object.values(J || {}).filter(x => x.held);
+  main.innerHTML = `<div class="bar"><h1>일지</h1><span class="tag" style="margin-left:auto">P3 미리보기</span></div>
+    <section><header><span>보유 · 계획</span><small>positions.json</small></header>${held.length ? held.map(x => `<div class="sent"><div><b class="w">${esc(x.name)}</b> ${chip(x)} <span class="mono">${x.qty}주 @ ${fmtP(x.avg, x.krw)}</span> · 손익 <b class="mono ${cls(x.pnl_pct)}">${sgn(x.pnl_pct)}</b> · 손절 <span class="mono">${fmtP(x.stop, x.krw)}</span>${x.r_now != null ? ` · <span class="mono">${x.r_now.toFixed(2)}R</span>` : ''}</div>${(x.plan || []).map(p => `<div class="mut">${p.n}차 ${esc(p.cond)} · ${esc(p.amount)} · ${esc(p.status)}</div>`).join('')}${x.note ? `<div class="mut">메모: ${esc(x.note)}</div>` : ''}</div>`).join('') : '<div class="sent"><div class="mut">보유 없음</div></div>'}</section>
+    <section><header><span>규칙 준수 체크 (수동)</span><small>P3에서 자동 채점</small></header><div class="sent"><div>· 손절선 없이 산 적 없음</div><div>· 반등 확인 전 물타기 없음</div><div>· 장중 손절 없음 (종가 기준)</div><div>· 손실 직후 사이즈 키운 적 없음 (틸트)</div></div></section>
+    <section><header><span>플레이북</span><small>positions.json note</small></header><div class="sent"><div><b class="w">FUD 과매도 바닥</b> — 급락 원인이 업종/지수 FUD · 가이던스 유지 · RSI 30↓ · 받침(합류) 위 가짜 이탈 → 1차 1/3, 종가 손절, 물타기 금지</div></div></section>`;
+}
 /* ------------------------------------------------------------ 공통 */
 function b64ToU8(b) { const p = '='.repeat((4 - b.length % 4) % 4); const s = (b + p).replace(/-/g, '+').replace(/_/g, '/'); const r = atob(s); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); }
 function bindTodo() {
@@ -340,8 +363,8 @@ function route() {
   const h = location.hash || '#/'; const m = h.match(/^#\/t\/(.+)$/);
   window.scrollTo(0, 0);
   if (m) return renderTicker(decodeURIComponent(m[1]));
-  if (h === '#/screener') return renderStub('screener', 'P3');
-  if (h === '#/journal') return renderStub('journal', 'P3');
+  if (h === '#/screener') return renderScreener();
+  if (h === '#/journal') return renderJournal();
   if (h === '#/settings') return renderSettings();
   return renderDesk();
 }
