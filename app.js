@@ -115,7 +115,7 @@ function chip(jd) {
 /* ------------------------------------------------------------ 데스크 */
 async function renderDesk() {
   setNav('desk');
-  const [syms, J, A] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json')]);
+  const [syms, J, A, AL] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json')]);
   const items = (await Promise.all(syms.map(async s => ({ s, r: await j(`out/${s}.json`) })))).filter(x => x.r);
   const ctx = [['^KS11', '코스피'], ['^KQ11', '코스닥'], ['^GSPC', 'S&P 500'], ['^VIX', 'VIX 공포지수']];
   const mk = await Promise.all(ctx.map(async ([s, n]) => ({ s, n, rows: await loadCsv(s) })));
@@ -155,6 +155,7 @@ async function renderDesk() {
   main.innerHTML = `
     <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span><span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
     <div class="mkts">${mkt || '<div class="mut" style="padding:8px 12px">시장 지표는 다음 배치 후 표시</div>'}</div>
+    ${(AL?.alerts || []).length ? `<section class="alerts"><header><span>오늘 알림 ${AL.alerts.length}</span><small>규칙당 하루 1회 · ${AL.asof}</small></header><div class="al-list">${AL.alerts.map(x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w">${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`).join('')}</div></section>` : ''}
     <div class="sumrow">${sum || '<span class="mut">판단 결과 없음</span>'}<span class="mut" style="margin-left:auto;font-size:11px">카드 탭 → 종목 페이지</span></div>
     <div class="cards">${cards}</div>
     <details class="rules"><summary>규칙 3줄</summary><div class="sent"><div>· 모든 판단은 종가 기준. 장중 흔들림은 무시.</div><div>· 손절선 없이 매수 없음. 반등 확인 전 물타기 금지.</div><div>· 문장은 가능성 표현. 확률 숫자 없음. 반대 근거 1줄 필수.</div></div></details>`;
@@ -165,7 +166,7 @@ async function renderDesk() {
 /* ------------------------------------------------------------ 종목 페이지 */
 async function renderTicker(sym) {
   setNav('desk');
-  const [r, rows, J, A] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json')]);
+  const [r, rows, J, A, AL] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json')]);
   if (!r) { main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1>${esc(sym)}</h1><span class="mut">분석 결과 없음 — 다음 배치 후 생성</span></div>`; return; }
   const jd = J?.[sym], a = A?.[sym], k = r.krw, c = r.close, f = v => fmtP(v, k);
   const chg = r.rsi_volume.chg_pct, rv = r.rsi_volume;
@@ -205,6 +206,9 @@ async function renderTicker(sym) {
       <span class="mono ${cls(chg)}" style="font-size:22px;font-weight:600">${f(c)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>
       <span class="mut mono" style="font-size:11px">${r.asof} 종가</span>${jd ? `<span style="margin-left:auto">${chip(jd)}</span>` : ''}</div>
     <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}</div>
+    ${(() => { const items = [...((AL?.alerts || []).filter(x => x.symbol === sym).map(x => ({ t: x.text, lv: x.level, rule: x.rule }))), ...((jd?.watch_today || []).filter(x => !(x.startsWith('★') && (AL?.alerts || []).some(a => a.symbol === sym && a.rule === '합류 구간'))).map(x => ({ t: x, lv: 'mut' })))];
+      if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+      return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
     ${sig}
     <div class="grid2">
       <section><header><span>일봉 · 선 8종</span><small>확대·이동 가능 · 상승 빨강 / 하락 파랑</small></header><div id="chart"></div></section>
@@ -218,7 +222,7 @@ async function renderTicker(sym) {
       <div class="sent">${r.sentences.map(s => `<div>· ${esc(s)}</div>`).join('')}</div>
       <img src="out/${encodeURIComponent(sym)}.png" style="width:100%;display:block;margin-top:8px" alt="배치가 만든 차트"></details>`;
   drawChart(rows, r);
-  bindTerms();
+  bindTerms(); bindTodo();
   $('#foot').textContent = `${sym} · ${stamp()}`;
 }
 
@@ -289,6 +293,13 @@ async function renderSettings() {
 function renderStub(name, phase) { setNav(name); main.innerHTML = `<div class="bar"><h1>${name === 'screener' ? '스크리너' : '일지'}</h1><span class="tag">${phase}</span></div><section><div class="sent"><div class="mut">로드맵 ${phase}에서 구현.</div></div></section>`; }
 
 /* ------------------------------------------------------------ 공통 */
+function bindTodo() {
+  document.querySelectorAll('.todo-i input').forEach(cb => cb.onchange = () => {
+    const key = cb.dataset.key; let d = {}; try { d = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+    d[cb.dataset.i] = cb.checked; try { localStorage.setItem(key, JSON.stringify(d)); } catch {}
+    cb.closest('.todo-i').classList.toggle('done', cb.checked);
+  });
+}
 function bindTerms() {
   document.querySelectorAll('.term').forEach(el => el.onclick = e => {
     e.preventDefault(); e.stopPropagation();

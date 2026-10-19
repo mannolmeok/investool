@@ -106,6 +106,19 @@ section>header small{color:var(--mut);font-weight:400;font-size:11px}
 .jrow span:last-child{font-family:'IBM Plex Sans KR'}
 .jrow.up span:first-child{color:var(--up);font-weight:600}.jrow.warn span:first-child{color:var(--warn);font-weight:600}.jrow.down span:first-child{color:var(--dn);font-weight:600}
 .jrow.warn{background:#262420}
+/* 알림 */
+.al-list{display:flex;flex-direction:column}
+.al{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--line);text-decoration:none;font-size:12.5px}
+.al:first-child{border-top:0}.al:hover{background:#222}
+/* 오늘 볼 것 */
+.todo-list{display:flex;flex-direction:column}
+.todo-i{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:start;padding:9px 12px;border-top:1px solid var(--line);font-size:13px;line-height:1.5;cursor:pointer}
+.todo-i:first-child{border-top:0}
+.todo-i input{display:none}
+.todo-i .box{width:16px;height:16px;border:1px solid #4A4A4A;border-radius:3px;margin-top:3px;position:relative}
+.todo-i.done .box{background:var(--ok);border-color:var(--ok)}.todo-i.done .box::after{content:'';position:absolute;left:5px;top:1px;width:4px;height:9px;border:solid #111;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.todo-i.done span:last-child{color:var(--mut);text-decoration:line-through}
+.todo-i .chip{margin-top:2px}
 /* 시그널 4칸 */
 .sigs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .sig{border:1px solid var(--line);border-radius:6px;padding:10px 12px}

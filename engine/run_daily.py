@@ -9,6 +9,7 @@ from lines import analyze
 from render import render
 from judge import main as judge_main
 from attribution import main as attribution_main
+from alerts import main as alerts_main
 
 KST = timezone(timedelta(hours=9))
 
@@ -29,6 +30,10 @@ def main():
         md.append("")
     at = attribution_main()
     jd = judge_main()
+    al, al_new = alerts_main()
+    md.append("## 알림")
+    for a in al: md.append(f"- [{a['level']}] **{a['symbol']}** {a['rule']}: {a['text']}")
+    md.append("")
     md.append("## 급락/급등 원인 분해")
     for sym, a in at.items(): md.append(f"- {a['sentence']}")
     md.append("")
