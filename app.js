@@ -100,7 +100,7 @@ function ladder(r, rows) {
     if (l.now) return `<div class="ld-row now" style="top:${l.yy.toFixed(1)}px"><span class="ld-dot" style="transform:translateY(${(l.y0 - l.yy).toFixed(1)}px)"></span><span class="ld-n">현재가</span><span class="ld-p mono">${fmtP(l.p, k)}</span><span class="ld-d mono"></span></div>`;
     return `<div class="ld-row ${isConf ? 'conf' : ''} ${d >= 0 ? 'above' : 'below'}" style="top:${l.yy.toFixed(1)}px;--c:${l.col}"><span class="ld-dot" style="transform:translateY(${(l.y0 - l.yy).toFixed(1)}px)"></span><span class="ld-n">${term(l.t, l.n)}</span><span class="ld-p mono">${fmtP(l.p, k)}</span><span class="ld-d mono ${cls(d)}">${sgn(d)}</span></div>`;
   }).join('');
-  return `<div class="ladder" style="height:${Hfin}px"><div class="ld-axis"></div>${rowsH}<div class="ld-now" style="top:${y(c).toFixed(1)}px"></div></div>`;
+  return `<div class="ladder" style="height:${Hfin}px"><div class="ld-axis"></div>${rowsH}</div>`;
 }
 /* 기여도 바 */
 function contribBar(a) {
@@ -210,9 +210,8 @@ async function renderTicker(sym) {
     <div class="sig"><div class="sig-k">체온</div><div class="sig-v"><span class="mono ${rv.rsi < 30 ? 'ok' : rv.rsi > 70 ? 'warn' : ''}">${term('RSI')} ${rv.rsi.toFixed(0)}</span> <span class="mono mut">· ${rv.vol_ratio.toFixed(1)}×</span></div><div class="sig-d">${rv.rsi < 30 ? '과매도 · ' : rv.rsi > 70 ? '과매수 · ' : ''}${rv.vol_ratio < 0.7 && chg < 0 ? '거래량 없이 하락(매수 부재)' : rv.vol_ratio > 1.8 && chg < -3 ? '거래량 동반 하락(투매)' : '거래량 보통'}${r.pattern?.type ? ` · ${term('쐐기', r.pattern.type)}${r.pattern.bars_to_apex ? ` ${r.pattern.bars_to_apex}봉` : ''}` : ''}</div></div>
   </div>`;
   main.innerHTML = `
-    <div class="bar"><a href="#/" class="back">‹</a><h1>${nameOf(sym, J)} <span class="mut mono" style="font-size:12px;font-weight:400">${esc(sym)}</span></h1>
-      <span class="mono ${cls(chg)}" style="font-size:22px;font-weight:600">${f(c)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>
-      <span class="mut mono" style="font-size:11px">${r.asof} 종가</span>${jd ? `<span style="margin-left:auto">${chip(jd)}</span>` : ''}</div>
+    <div class="thead"><div class="bar"><a href="#/" class="back">‹</a><h1>${nameOf(sym, J)} <span class="mut mono" style="font-size:12px;font-weight:400">${esc(sym)}</span></h1>${jd ? `<span style="margin-left:auto">${chip(jd)}</span>` : ''}</div>
+      <div class="bar"><span class="mono ${cls(chg)}" style="font-size:26px;font-weight:600">${f(c)}</span><span class="mono ${cls(chg)}" style="font-size:14px">${sgn(chg)}</span><span class="mut mono" style="font-size:11px">${r.asof} 종가 · 야후 15분 지연</span></div></div>
     <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}<small>${esc(PLAIN[jd?.chip] || (conf.length ? '유명한 선 여러 개가 겹치는 가격 근처예요. 한 번 튀어오를 수는 있지만 바닥이 확정된 건 아니에요.' : '가까운 기준선이 없어서 다음 기준선까지 미끄러질 수 있어요.'))}</small></div>
     ${(() => { const items = [...((AL?.alerts || []).filter(x => x.symbol === sym).map(x => ({ t: x.text, lv: x.level, rule: x.rule }))), ...((jd?.watch_today || []).filter(x => !(x.startsWith('★') && (AL?.alerts || []).some(a => a.symbol === sym && a.rule.startsWith('합류')))).map(x => ({ t: x, lv: 'mut' })))];
       if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
@@ -277,10 +276,10 @@ async function renderSettings() {
   const supported = 'serviceWorker' in navigator && 'PushManager' in window;
   const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
   const ios = /iphone|ipad/i.test(navigator.userAgent); const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  const al = await j('out/alerts.json');
+  const [al, J] = await Promise.all([j('out/alerts.json'), j('out/judgement.json')]);
   main.innerHTML = `
     <div class="bar"><h1>알림 · 설정</h1></div>
-    <section><header><span>오늘 알림</span><small>규칙당 하루 1회 · 서버 푸시는 다음 단계</small></header><div class="sent">${(al?.alerts || []).length ? al.alerts.map(x => `<div><span class="chip ${x.level}">${esc(x.rule)}</span> <b class="w">${esc(x.symbol)}</b> ${esc(x.text)}</div>`).join('') : '<div class="mut">알림 없음</div>'}</div></section>
+    <section><header><span>오늘 알림 ${(al?.alerts || []).length}</span><small>규칙당 하루 1회 · 서버 푸시는 설정 후</small></header><div class="al-list">${(al?.alerts || []).length ? al.alerts.map(x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w">${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`).join('') : '<div class="sent"><div class="mut">알림 없음</div></div>'}</div></section>
     <section><header><span>앱 알림 (웹 푸시)</span></header><div class="sent">
       <div>· 브라우저 지원: <b class="${supported ? 'ok' : 'dn'}">${supported ? '됨' : '안 됨'}</b> · 권한: <b>${perm}</b></div>
       ${ios && !standalone ? '<div class="warn">· 아이폰은 공유 → "홈 화면에 추가" 후 그 아이콘으로 열어야 알림이 옵니다.</div>' : ''}
