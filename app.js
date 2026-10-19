@@ -30,6 +30,25 @@ const G = { // 초보용 용어 설명 (탭하면 뜸)
   '거래량': '오늘 거래량 ÷ 최근 20일 평균. 떨어지는데 거래량이 적으면 "투매"가 아니라 "사는 사람이 없는" 하락.',
   '쐐기': '위아래 선이 좁아지는 모양. 좁아질수록 곧 한쪽으로 크게 움직일 가능성.',
 };
+/* 용어 그림 (64×36 SVG) — 글보다 먼저 눈에 들어오게 */
+const GI = (() => {
+  const W = 'currentColor', P = (d, c, extra = '') => `<path d="${d}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ${extra}/>`;
+  const price = (d) => P(d, 'var(--mut)');
+  const svg = inner => `<svg class="gi" viewBox="0 0 64 36" width="64" height="36" aria-hidden="true">${inner}</svg>`;
+  return {
+    '추세선': svg(price('M4 10 l8 8 l6 -6 l8 10 l6 -4 l8 9 l6 -3 l8 6') + P('M4 6 L58 30', 'var(--warn)') + P('M50 20 l8 -10', 'var(--up)')),
+    '이평': svg(price('M4 20 l6 -8 l6 10 l6 -12 l6 9 l6 -6 l6 8 l6 -10 l6 7 l6 -4') + P('M4 22 C 20 10, 40 26, 60 12', '#7C9CFF')),
+    '합류': svg(P('M4 12 L60 24', 'var(--warn)') + P('M4 30 L60 22', '#7C9CFF') + P('M4 23 L60 23', 'var(--tag)', 'stroke-dasharray="3 3"') + `<rect x="46" y="19" width="14" height="8" rx="2" fill="var(--ok)" opacity=".35"/>` + `<text x="2" y="9" font-size="7" fill="var(--ok)">★ 겹치는 자리</text>`),
+    'RSI': svg(P('M8 30 A24 24 0 0 1 56 30', 'var(--track)', 'stroke-width="5"') + P('M8 30 A24 24 0 0 1 20 11', 'var(--ok)', 'stroke-width="5"') + P('M44 11 A24 24 0 0 1 56 30', 'var(--warn)', 'stroke-width="5"') + P('M32 30 L18 16', W) + `<text x="4" y="35" font-size="7" fill="var(--mut)">30</text><text x="50" y="35" font-size="7" fill="var(--mut)">70</text>`),
+    '손절': svg(price('M4 8 l8 6 l6 -3 l8 8 l6 2 l8 6') + P('M4 28 L60 28', 'var(--up)', 'stroke-dasharray="4 3"') + P('M40 27 l6 7', 'var(--up)') + `<text x="40" y="24" font-size="7" fill="var(--up)">종가 이탈</text>`),
+    '지지': svg(P('M4 28 L60 28', 'var(--ok)') + price('M6 6 l10 20 l8 -12 l8 12 l8 -14 l8 14 l8 -16') + `<text x="36" y="12" font-size="7" fill="var(--ok)">받침</text>`),
+    '저항': svg(P('M4 8 L60 8', 'var(--warn)') + price('M6 30 l10 -20 l8 12 l8 -12 l8 14 l8 -14 l8 16') + `<text x="36" y="26" font-size="7" fill="var(--warn)">천장</text>`),
+    '피보': svg(price('M4 32 L34 6 L58 22') + P('M34 14 L60 14', 'var(--tag)', 'stroke-dasharray="3 3"') + P('M34 18 L60 18', 'var(--tag)', 'stroke-dasharray="3 3"') + P('M34 22 L60 22', 'var(--tag)', 'stroke-dasharray="3 3"') + `<text x="4" y="10" font-size="7" fill="var(--tag)">38·50·62%</text>`),
+    '볼린저': svg(P('M4 8 C 20 2, 40 10, 60 6', '#7C9CFF', 'opacity=".7"') + P('M4 30 C 20 26, 40 34, 60 30', '#7C9CFF', 'opacity=".7"') + P('M4 19 C 20 14, 40 22, 60 18', '#7C9CFF', 'stroke-dasharray="3 3"') + price('M4 20 l8 -6 l8 10 l8 -8 l8 6 l8 -4 l8 8 l8 -10')),
+    '거래량': svg([6, 14, 22, 30, 38, 46, 54].map((x, i) => { const h = [8, 12, 6, 10, 7, 22, 9][i]; return `<rect x="${x}" y="${34 - h}" width="6" height="${h}" fill="${i === 5 ? 'var(--up)' : 'var(--track)'}"/>`; }).join('') + P('M4 14 L60 14', 'var(--mut)', 'stroke-dasharray="2 3"') + `<text x="4" y="11" font-size="7" fill="var(--mut)">20일 평균</text>`),
+    '쐐기': svg(P('M4 6 L60 20', 'var(--warn)') + P('M4 32 L60 22', 'var(--warn)') + price('M6 18 l6 -8 l6 12 l6 -8 l6 10 l6 -6 l6 6 l6 -4 l6 3') + P('M54 21 l6 -5', 'var(--up)') + P('M54 21 l6 5', 'var(--dn)')),
+  };
+})();
 const PLAIN = { exit: '미리 정한 손절선 아래에서 하루를 마감했어요. 규칙대로면 파는 날이에요 — 장중 흔들림 말고 종가로만 판단해요.', warn: '손절선 바로 위예요. 오늘 밤 종가가 손절선 아래면 규칙대로 정리, 위면 그대로 보유.', hold: '손절선까지 여유가 있어요. 추가 매수는 반등을 확인한 뒤에만.', target: '1차 목표에 닿았어요. 일부 팔거나 다음 차수를 검토할 때.', enter: '미리 정한 진입 조건을 종가로 만족했어요. 첫 매수는 계획 금액의 1/3만.', wait: '아직 진입 조건이 안 됐어요. 기다리는 게 일이에요.' };
 const term = (t, label = t) => `<span class="term" data-g="${t}">${label}</span>`;
 
@@ -336,7 +355,7 @@ async function renderSettings() {
     <section><header><span>화면</span><small>다크가 기본 · 밝은 곳에선 라이트</small></header><div class="sent"><div style="text-indent:0;padding-left:0"><span class="vt" style="margin:0" id="themeSel">${['dark', 'light', 'system'].map(t => `<button data-t="${t}" class="${(localStorage.getItem('theme') || 'dark') === t ? 'on' : ''}">${{ dark: '다크', light: '라이트', system: '기기 설정' }[t]}</button>`).join('')}</span></div></div></section>
     <section><header><span>데이터 상태</span><small>종목별 마지막 종가일</small></header><div class="sent">${Object.values(J || {}).map(x => { const d = x.asof ? Math.round((Date.now() - new Date(x.asof)) / 864e5) : null; return `<div><b class="w">${esc(x.name || x.symbol)}</b> <span class="mono ${d > 4 ? 'warn' : 'mut'}">${x.asof || '—'}${d != null ? ` (${d}일 전)` : ''}</span></div>`; }).join('') || '<div class="mut">—</div>'}<div class="mut">야후 파이낸스 일봉 · 15분 지연 · 장중 봉은 제외 · 국내 봉은 야후 반영이 반나절 늦을 때가 있음</div></div></section>
     <section><header><span>관심 종목</span><small>watchlist.txt</small></header><div class="sent"><div>· 저장소의 <span class="mono">watchlist.txt</span>에 야후 심볼 한 줄 추가 → 다음 배치부터 (코스피 .KS / 코스닥 .KQ)</div></div></section>
-    <section><header><span>용어</span><small>탭하면 설명</small></header><div class="sent">${Object.keys(G).map(k => `<div>${term(k)} <span class="mut">${esc(G[k])}</span></div>`).join('')}</div></section>`;
+    <section><header><span>용어</span><small>탭하면 설명</small></header><div class="gl">${Object.keys(G).map(k => `<div class="gl-i">${GI[k] || ''}<div><b>${term(k)}</b><div class="mut">${esc(G[k])}</div></div></div>`).join('')}</div></section>`;
   document.querySelectorAll('#themeSel button').forEach(b => b.onclick = () => { setTheme(b.dataset.t); document.querySelectorAll('#themeSel button').forEach(x => x.classList.toggle('on', x === b)); });
   $('#btnNotif').onclick = async () => {
     const m = $('#notifMsg'); const cfg = window.INVESTOOL_CONFIG || {};
@@ -391,7 +410,7 @@ function bindTerms() {
   document.querySelectorAll('.term').forEach(el => el.onclick = e => {
     e.preventDefault(); e.stopPropagation();
     let tip = $('#tip'); if (!tip) { tip = document.createElement('div'); tip.id = 'tip'; document.body.appendChild(tip); tip.onclick = () => tip.classList.remove('on'); }
-    tip.innerHTML = `<b>${esc(el.dataset.g)}</b><div>${esc(G[el.dataset.g] || '')}</div><div class="mut" style="margin-top:6px;font-size:11px">탭해서 닫기</div>`; tip.classList.add('on');
+    tip.innerHTML = `<b>${esc(el.dataset.g)}</b>${GI[el.dataset.g] || ''}<div>${esc(G[el.dataset.g] || '')}</div><div class="mut" style="margin-top:6px;font-size:11px">탭해서 닫기</div>`; tip.classList.add('on');
   });
 }
 function setNav(name) { document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === name)); }
