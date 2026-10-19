@@ -287,6 +287,7 @@ function drawChart(rows, r) {
     layout: { background: { color: C.bg }, textColor: C.mut, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 },
     grid: { vertLines: { color: C.line }, horzLines: { color: C.line } },
     rightPriceScale: { borderColor: C.line, scaleMargins: { top: 0.08, bottom: 0.22 } }, timeScale: { borderColor: C.line, rightOffset: 8 },
+    handleScroll: { vertTouchDrag: false }, handleScale: { axisPressedMouseMove: { time: true, price: false } }, // 모바일: 세로 드래그는 페이지 스크롤
     crosshair: { mode: 0 }, localization: { locale: 'ko-KR', priceFormatter: v => fmtP(v, k) },
   });
   const cs = chart.addCandlestickSeries({ upColor: C.up, downColor: C.dn, borderVisible: false, wickUpColor: C.up, wickDownColor: C.dn });
