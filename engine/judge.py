@@ -28,7 +28,7 @@ def judge_one(p: dict, r: dict, rules: dict) -> dict:
     conf = r.get("confluence") or []
     flags, rows, watch_today = [], [], []
     held = bool(p.get("qty"))
-    res = {"symbol": sym, "name": p.get("name", sym), "lot": p.get("lot", ""), "asof": r["asof"], "close": close, "krw": krw, "held": held}
+    res = {"symbol": sym, "name": p.get("name") or rules.get("_names", {}).get(sym, sym), "lot": p.get("lot", ""), "asof": r["asof"], "close": close, "krw": krw, "held": held}
 
     if held:
         stop = p.get("stop")
@@ -123,7 +123,8 @@ def main():
     out = {}
     pos_by = {p["symbol"]: p for p in cfg["positions"]}
     wl = [s.strip() for s in (ROOT / "watchlist.txt").read_text().splitlines() if s.strip() and not s.startswith("#")]
-    allp = [pos_by.get(s, {"symbol": s, "lot": "관찰"}) for s in wl] + [p for s, p in pos_by.items() if s not in wl]
+    names = cfg.get("names", {})
+    allp = [pos_by.get(s, {"symbol": s, "lot": "관찰", "name": names.get(s, s)}) for s in wl] + [p for s, p in pos_by.items() if s not in wl]
     for p in allp:
         jp = OUT / f"{p['symbol']}.json"
         if not jp.exists():
