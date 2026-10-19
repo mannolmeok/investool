@@ -146,6 +146,7 @@ async function renderDesk() {
   const sum = order.filter(c => cnt[c]).map(c => `${chip({ chip: c })} <b class="mono">${cnt[c]}</b>`).join('<span class="mut" style="margin:0 8px">·</span>');
   const PR = { exit: 0, warn: 1, enter: 2, target: 3, hold: 4, wait: 5, none: 6 };
   items.sort((a, b) => (PR[J?.[a.s]?.chip ?? 'none'] - PR[J?.[b.s]?.chip ?? 'none']));
+  const trs = [];
   const cards = items.map(({ s, r, rows }) => {
     const jd = J?.[s], a = A?.[s], k = r.krw, c = r.close;
     const lv = [];
@@ -158,7 +159,9 @@ async function renderDesk() {
     const chg = r.rsi_volume.chg_pct, rsi = r.rsi_volume.rsi;
     const why = a ? `${a.main_driver} 영향` : '';
     const one = jd?.status || (r.sentences.find(x => x.startsWith('★')) || '').replace(/ —.*$/, '');
-    return `<a class="card" href="#/t/${encodeURIComponent(s)}">
+    const below = uniq.filter(x => x.price < c).sort((x, y) => y.price - x.price)[0], abv = uniq.filter(x => x.price >= c).sort((x, y) => x.price - y.price)[0];
+    trs.push({ s, jd, c, k, chg, rsi, below, abv, one });
+    return `<a class="card st-${jd?.chip || 'none'}" href="#/t/${encodeURIComponent(s)}">
       <div class="card-h"><div><div class="card-n w">${nameOf(s, J)} <span class="mut mono" style="font-size:11px">${esc(s)}</span></div><div class="mut mono" style="font-size:11px">${r.asof} 종가</div></div>${chip(jd)}</div>
       <div class="card-p"><span class="mono ${cls(chg)}" style="font-size:24px;font-weight:600">${fmtP(c, k)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>${why ? `<span class="mut" style="font-size:11px">${why}</span>` : ''}<span class="card-sp">${sparkline(rows.slice(-30).map(x => x.close), rows.length > 30 && rows[rows.length - 1].close >= rows[rows.length - 30].close ? C.up : C.dn, 80, 24)}</span></div>
       ${levelBar(uniq, c, k)}
@@ -166,6 +169,18 @@ async function renderDesk() {
       <div class="card-one">${esc(one)}</div>
     </a>`;
   }).join('');
+  // 표 보기: 한 줄에 한 종목 — 받침 ↔ 현재 ↔ 천장 위치를 작은 막대로
+  const miniBar = x => {
+    if (!x.below && !x.abv) return '<span class="mut" style="font-size:11px">기준선 없음</span>';
+    const lo = x.below ? x.below.price : x.c * 0.97, hi = x.abv ? x.abv.price : x.c * 1.03;
+    const pos = v => Math.max(2, Math.min(98, (v - lo) / (hi - lo) * 100));
+    const lab = (o, side) => o ? `<span class="lab" style="${side}:0;color:${o.color}">${o.label} ${fmtP(o.price, x.k)}</span>` : '';
+    const md = (o, side) => o ? `<span class="md ${o.price < x.c ? 'ok' : 'warn'}" style="${side}:0">${sgn(pct(o.price, x.c))}</span>` : '';
+    return `<div class="mini">${lab(x.below, 'left')}${lab(x.abv, 'right')}${md(x.below, 'left')}${md(x.abv, 'right')}<div class="t"></div>${x.below ? `<div class="m" style="left:2%;background:${x.below.color}"></div>` : ''}${x.abv ? `<div class="m" style="left:98%;background:${x.abv.color}"></div>` : ''}<div class="m now" style="left:${pos(x.c)}%"></div></div>`;
+  };
+  const dist = (o, c) => o ? `<span class="${o.price < c ? 'ok' : 'warn'}">${sgn(pct(o.price, c))}</span>` : '<span class="mut">—</span>';
+  const table = `<div class="tbl"><div class="tr"><span>종목</span><span>종가</span><span>받침 ↔ 천장 (현재 위치)</span><span class="d">아래선까지</span><span class="d">위선까지</span><span class="d">RSI</span><span>상태</span></div>${trs.map(x => `<a class="tr" href="#/t/${encodeURIComponent(x.s)}" title="${esc(x.one)}"><span class="n">${nameOf(x.s, J)}<small>${esc(x.s)}</small></span><span class="pr ${cls(x.chg)}">${fmtP(x.c, x.k)}<small>${sgn(x.chg)}</small></span>${miniBar(x)}<span class="d hd">${dist(x.below, x.c)}</span><span class="d hd">${dist(x.abv, x.c)}</span><span class="d hd ${x.rsi < 30 ? 'ok' : x.rsi > 70 ? 'warn' : 'mut'}">${x.rsi.toFixed(0)}</span><span>${chip(x.jd)}</span></a>`).join('')}</div>`;
+  const view = localStorage.getItem('deskView') || 'card';
   main.innerHTML = `
     <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span><span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
     ${(() => { const al = (AL?.alerts || []); if (!al.length) return '';
@@ -174,14 +189,16 @@ async function renderDesk() {
       const row = x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w">${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`;
       const head = sorted.slice(0, 4).map(row).join(''), rest = sorted.slice(4).map(row).join('');
       return `<section class="alerts"><header><span>오늘 알림 ${al.length}</span><small>규칙당 하루 1회 · ${AL.asof}</small></header><div class="al-list">${head}${rest ? `<details class="al-more"><summary>${sorted.length - 4}개 더</summary>${rest}</details>` : ''}</div></section>`; })()}
-    <div class="sumrow">${sum || '<span class="mut">판단 결과 없음</span>'}<span class="mut" style="margin-left:auto;font-size:11px">카드 탭 → 종목 페이지</span></div>
-    <div class="cards">${cards}</div>
+    <div class="sumrow">${sum || '<span class="mut">판단 결과 없음</span>'}<span class="vt"><button data-v="card" class="${view === 'card' ? 'on' : ''}">카드</button><button data-v="table" class="${view === 'table' ? 'on' : ''}">표</button></span><span class="mut" style="margin-left:auto;font-size:11px">탭 → 종목 페이지</span></div>
+    <div class="cards" ${view === 'table' ? 'hidden' : ''}>${cards}</div>
+    <div id="tblv" ${view === 'card' ? 'hidden' : ''}>${table}</div>
     ${eventsStrip(EV, J)}
     <div class="mut" style="font-size:12px;padding:2px 2px 0">시장 맥락</div>
     <div class="mkts">${mkt || '<div class="mut" style="padding:8px 12px">시장 지표는 다음 배치 후 표시</div>'}</div>
     ${sectH ? `<div class="sects"><span class="mut">업종 맥락</span>${sectH}</div>` : ''}
     <details class="rules"><summary>규칙 3줄</summary><div class="sent"><div>· 모든 판단은 종가 기준. 장중 흔들림은 무시.</div><div>· 손절선 없이 매수 없음. 반등 확인 전 물타기 금지.</div><div>· 문장은 가능성 표현. 확률 숫자 없음. 반대 근거 1줄 필수.</div></div></details>`;
   bindTerms();
+  document.querySelectorAll('.vt button').forEach(b => b.onclick = () => { localStorage.setItem('deskView', b.dataset.v); document.querySelectorAll('.vt button').forEach(x => x.classList.toggle('on', x === b)); $('.cards').hidden = b.dataset.v === 'table'; $('#tblv').hidden = b.dataset.v === 'card'; });
   $('#foot').textContent = `읽음 ${stamp()}`;
 }
 
