@@ -282,19 +282,28 @@ async function renderSettings() {
     <section><header><span>관심 종목</span><small>watchlist.txt</small></header><div class="sent"><div>· 저장소의 <span class="mono">watchlist.txt</span>에 야후 심볼 한 줄 추가 → 다음 배치부터 (코스피 .KS / 코스닥 .KQ)</div></div></section>
     <section><header><span>용어</span><small>탭하면 설명</small></header><div class="sent">${Object.keys(G).map(k => `<div>${term(k)} <span class="mut">${esc(G[k])}</span></div>`).join('')}</div></section>`;
   $('#btnNotif').onclick = async () => {
-    const m = $('#notifMsg');
+    const m = $('#notifMsg'); const cfg = window.INVESTOOL_CONFIG || {};
     if (!supported) { m.textContent = '이 브라우저는 푸시를 지원하지 않아요.'; return; }
     const p = await Notification.requestPermission();
     if (p !== 'granted') { m.textContent = '권한이 거부됐어요.'; return; }
     const reg = await navigator.serviceWorker.ready;
-    reg.showNotification('investool', { body: '알림이 켜졌어요. 서버 연결은 다음 단계에서.', icon: 'icons/icon-192.png' });
-    m.textContent = '테스트 알림을 보냈어요.';
+    if (!cfg.SUPABASE_URL || !cfg.VAPID_PUBLIC_KEY) {
+      reg.showNotification('investool', { body: '알림 권한 OK. 서버 연결(Supabase)은 아직 — 연결되면 자동으로 구독돼요.', icon: 'icons/icon-192.png' });
+      m.textContent = '권한은 켜졌어요. 서버 구독은 설정 후.'; return;
+    }
+    try {
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(cfg.VAPID_PUBLIC_KEY) });
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/push_subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`, Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify({ endpoint: sub.endpoint, sub: sub.toJSON() }) });
+      m.textContent = res.ok ? '구독 완료 — 다음 배치부터 알림이 와요.' : `구독 저장 실패 (${res.status})`;
+      reg.showNotification('investool', { body: '알림 구독 완료', icon: 'icons/icon-192.png' });
+    } catch (e) { m.textContent = '구독 실패: ' + e.message; }
   };
   bindTerms();
 }
 function renderStub(name, phase) { setNav(name); main.innerHTML = `<div class="bar"><h1>${name === 'screener' ? '스크리너' : '일지'}</h1><span class="tag">${phase}</span></div><section><div class="sent"><div class="mut">로드맵 ${phase}에서 구현.</div></div></section>`; }
 
 /* ------------------------------------------------------------ 공통 */
+function b64ToU8(b) { const p = '='.repeat((4 - b.length % 4) % 4); const s = (b + p).replace(/-/g, '+').replace(/_/g, '/'); const r = atob(s); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); }
 function bindTodo() {
   document.querySelectorAll('.todo-i input').forEach(cb => cb.onchange = () => {
     const key = cb.dataset.key; let d = {}; try { d = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}

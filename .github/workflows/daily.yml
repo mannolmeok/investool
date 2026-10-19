@@ -16,6 +16,13 @@ jobs:
       - run: sudo apt-get install -y fonts-noto-cjk >/dev/null
       - run: pip install -r requirements.txt
       - run: python engine/run_daily.py
+      - run: python engine/push.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
       - name: commit outputs
         run: |
           git config user.name "investool-bot"
