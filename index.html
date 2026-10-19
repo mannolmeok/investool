@@ -13,7 +13,7 @@
 <style>
 :root{--bg:#1E1E1E;--nav:#161616;--panel:#252525;--line:#2A2A2A;--row:#232323;--txt:#DCDDDE;--mut:#8A8A8A;--dim:#B0B0B0;--w:#FFFFFF;--up:#F25C5C;--dn:#4F9CF9;--warn:#F5A623;--ok:#3FBF7F;--tag:#B8A6FF}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.5 'IBM Plex Sans KR',system-ui,sans-serif;-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:13.5px/1.5 'IBM Plex Sans KR',system-ui,sans-serif;-webkit-text-size-adjust:100%}
 a{color:inherit}
 .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 .up{color:var(--up)}.dn{color:var(--dn)}.warn{color:var(--warn)}.ok{color:var(--ok)}.mut{color:var(--mut)}.dim{color:var(--dim)}.w{color:var(--w)}
@@ -25,7 +25,7 @@ nav a.on{background:#2E2E2E;color:var(--w);font-weight:600}
 nav .foot{margin-top:auto;padding:8px 10px;font-size:11px;color:var(--mut)}
 main{padding:16px 20px;display:flex;flex-direction:column;gap:14px;min-width:0}
 .bar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
-.bar h1{font-size:17px;margin:0;color:var(--w)}
+.bar h1{font-size:17px;margin:0;color:var(--w);display:inline-flex;align-items:baseline;gap:6px}
 .back{text-decoration:none;color:var(--mut);font-size:20px;line-height:1}
 .tag{padding:2px 7px;border:1px solid var(--tag);color:var(--tag);border-radius:3px;font-size:11px}
 .chip{display:inline-block;padding:2px 8px;border:1px solid currentColor;border-radius:3px;font-size:11px;font-weight:600;line-height:1.4;white-space:nowrap}
@@ -37,6 +37,7 @@ section>header small{color:var(--mut);font-weight:400;font-size:11px}
 .sent div{padding-left:14px;text-indent:-14px}
 .sent .conf{color:var(--ok);font-weight:600}.sent .counter{color:var(--mut)}
 .headline{font-size:16px;font-weight:700;color:var(--w);padding:12px 14px;border-left:3px solid var(--mut);background:var(--panel);border-radius:0 6px 6px 0}
+.headline small{display:block;font-size:12.5px;font-weight:400;color:var(--dim);margin-top:4px;line-height:1.5}
 .headline.dn{border-color:var(--dn)}.headline.warn{border-color:var(--warn)}.headline.ok{border-color:var(--ok)}
 /* 시장 맥락 */
 .mkts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -53,6 +54,7 @@ section>header small{color:var(--mut);font-weight:400;font-size:11px}
 .card-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .card-n{font-size:15px;font-weight:700}
 .card-p{display:flex;align-items:baseline;gap:8px;margin:4px 0 2px}
+.card-sp{margin-left:auto;align-self:center;width:80px}
 .card-f{display:flex;gap:6px;font-size:12px;margin-top:4px;flex-wrap:wrap}
 .card-one{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px;color:var(--dim);line-height:1.45}
 /* 가로 레벨 바 */
@@ -122,6 +124,7 @@ section>header small{color:var(--mut);font-weight:400;font-size:11px}
 /* 시그널 4칸 */
 .sigs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .sig{border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.dots{display:inline-flex;gap:3px;vertical-align:middle;margin:0 4px}.dots i{width:9px;height:9px;border-radius:5px;border:1px solid #4A4A4A}.dots i.on{background:var(--up);border-color:var(--up)}
 .sig-k{font-size:11px;color:var(--mut)}.sig-v{font-size:17px;font-weight:600;margin:2px 0}.sig-d{font-size:11px;color:var(--dim);line-height:1.4}
 .grid2{display:grid;grid-template-columns:1fr 360px;gap:14px;align-items:start}
 .grid2b{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}

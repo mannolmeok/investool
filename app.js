@@ -22,6 +22,7 @@ const G = { // 초보용 용어 설명 (탭하면 뜸)
   '거래량': '오늘 거래량 ÷ 최근 20일 평균. 떨어지는데 거래량이 적으면 "투매"가 아니라 "사는 사람이 없는" 하락.',
   '쐐기': '위아래 선이 좁아지는 모양. 좁아질수록 곧 한쪽으로 크게 움직일 가능성.',
 };
+const PLAIN = { exit: '미리 정한 손절선 아래에서 하루를 마감했어요. 규칙대로면 파는 날이에요 — 장중 흔들림 말고 종가로만 판단해요.', warn: '손절선 바로 위예요. 오늘 밤 종가가 손절선 아래면 규칙대로 정리, 위면 그대로 보유.', hold: '손절선까지 여유가 있어요. 추가 매수는 반등을 확인한 뒤에만.', target: '1차 목표에 닿았어요. 일부 팔거나 다음 차수를 검토할 때.', enter: '미리 정한 진입 조건을 종가로 만족했어요. 첫 매수는 계획 금액의 1/3만.', wait: '아직 진입 조건이 안 됐어요. 기다리는 게 일이에요.' };
 const term = (t, label = t) => `<span class="term" data-g="${t}">${label}</span>`;
 
 /* ------------------------------------------------------------ 데이터 */
@@ -114,9 +115,9 @@ function chip(jd) {
 
 /* ------------------------------------------------------------ 데스크 */
 async function renderDesk() {
-  setNav('desk');
+  setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
   const [syms, J, A, AL] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json')]);
-  const items = (await Promise.all(syms.map(async s => ({ s, r: await j(`out/${s}.json`) })))).filter(x => x.r);
+  const items = (await Promise.all(syms.map(async s => ({ s, r: await j(`out/${s}.json`), rows: await loadCsv(s) })))).filter(x => x.r);
   const ctx = [['^KS11', '코스피'], ['^KQ11', '코스닥'], ['^GSPC', 'S&P 500'], ['^VIX', 'VIX 공포지수']];
   const mk = await Promise.all(ctx.map(async ([s, n]) => ({ s, n, rows: await loadCsv(s) })));
   const mkt = mk.filter(m => m.rows.length > 2).map(m => {
@@ -132,7 +133,7 @@ async function renderDesk() {
   const cnt = {}; items.forEach(({ s }) => { const c = (J?.[s]?.chip) || 'none'; cnt[c] = (cnt[c] || 0) + 1; });
   const order = ['exit', 'warn', 'enter', 'target', 'hold', 'wait'];
   const sum = order.filter(c => cnt[c]).map(c => `${chip({ chip: c })} <b class="mono">${cnt[c]}</b>`).join('<span class="mut" style="margin:0 8px">·</span>');
-  const cards = items.map(({ s, r }) => {
+  const cards = items.map(({ s, r, rows }) => {
     const jd = J?.[s], a = A?.[s], k = r.krw, c = r.close;
     const lv = [];
     if (jd?.held && jd.stop) lv.push({ label: '손절', price: jd.stop, color: C.dn });
@@ -146,7 +147,7 @@ async function renderDesk() {
     const one = jd?.status || (r.sentences.find(x => x.startsWith('★')) || '').replace(/ —.*$/, '');
     return `<a class="card" href="#/t/${encodeURIComponent(s)}">
       <div class="card-h"><div><div class="card-n w">${nameOf(s, J)} <span class="mut mono" style="font-size:11px">${esc(s)}</span></div><div class="mut mono" style="font-size:11px">${r.asof} 종가</div></div>${chip(jd)}</div>
-      <div class="card-p"><span class="mono ${cls(chg)}" style="font-size:24px;font-weight:600">${fmtP(c, k)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>${why ? `<span class="mut" style="font-size:11px">${why}</span>` : ''}</div>
+      <div class="card-p"><span class="mono ${cls(chg)}" style="font-size:24px;font-weight:600">${fmtP(c, k)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>${why ? `<span class="mut" style="font-size:11px">${why}</span>` : ''}<span class="card-sp">${sparkline(rows.slice(-30).map(x => x.close), rows.length > 30 && rows[rows.length - 1].close >= rows[rows.length - 30].close ? C.up : C.dn, 80, 24)}</span></div>
       ${levelBar(uniq, c, k)}
       <div class="card-f"><span class="${rsi < 30 ? 'ok' : rsi > 70 ? 'warn' : 'mut'}">${term('RSI')} ${rsi.toFixed(0)}${rsi < 30 ? ' 과매도' : rsi > 70 ? ' 과매수' : ''}</span><span class="mut">·</span><span class="mut">${term('거래량')} ${r.rsi_volume.vol_ratio.toFixed(1)}×</span>${r.pattern?.type ? `<span class="mut">·</span><span class="warn">${term('쐐기', r.pattern.type)}</span>` : ''}</div>
       <div class="card-one">${esc(one)}</div>
@@ -154,10 +155,11 @@ async function renderDesk() {
   }).join('');
   main.innerHTML = `
     <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span><span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
-    <div class="mkts">${mkt || '<div class="mut" style="padding:8px 12px">시장 지표는 다음 배치 후 표시</div>'}</div>
     ${(AL?.alerts || []).length ? `<section class="alerts"><header><span>오늘 알림 ${AL.alerts.length}</span><small>규칙당 하루 1회 · ${AL.asof}</small></header><div class="al-list">${AL.alerts.map(x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w">${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`).join('')}</div></section>` : ''}
     <div class="sumrow">${sum || '<span class="mut">판단 결과 없음</span>'}<span class="mut" style="margin-left:auto;font-size:11px">카드 탭 → 종목 페이지</span></div>
     <div class="cards">${cards}</div>
+    <div class="mut" style="font-size:12px;padding:2px 2px 0">시장 맥락</div>
+    <div class="mkts">${mkt || '<div class="mut" style="padding:8px 12px">시장 지표는 다음 배치 후 표시</div>'}</div>
     <details class="rules"><summary>규칙 3줄</summary><div class="sent"><div>· 모든 판단은 종가 기준. 장중 흔들림은 무시.</div><div>· 손절선 없이 매수 없음. 반등 확인 전 물타기 금지.</div><div>· 문장은 가능성 표현. 확률 숫자 없음. 반대 근거 1줄 필수.</div></div></details>`;
   bindTerms();
   $('#foot').textContent = `읽음 ${stamp()}`;
@@ -165,7 +167,7 @@ async function renderDesk() {
 
 /* ------------------------------------------------------------ 종목 페이지 */
 async function renderTicker(sym) {
-  setNav('desk');
+  setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
   const [r, rows, J, A, AL] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json')]);
   if (!r) { main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1>${esc(sym)}</h1><span class="mut">분석 결과 없음 — 다음 배치 후 생성</span></div>`; return; }
   const jd = J?.[sym], a = A?.[sym], k = r.krw, c = r.close, f = v => fmtP(v, k);
@@ -196,7 +198,7 @@ async function renderTicker(sym) {
       <span>${term('거래량')}</span><b class="mono">${a.volume_ratio?.toFixed(1)}×</b><span class="mut">${esc(a.kind)}</span></div>
     <div class="sent"><div>주원인 <b class="w">${esc(a.main_driver)}</b> — ${esc(a.sentence.split('. ').slice(-1)[0])}</div></div></section>` : '';
   const sig = `<div class="sigs">
-    <div class="sig"><div class="sig-k">위치</div><div class="sig-v">${term('이평')} <b class="mono ${above === 0 ? 'dn' : above === nma ? 'up' : 'warn'}">${above}/${nma}</b> 위</div><div class="sig-d">${r.ma_arrangement || ''}${r.ma_crosses?.length ? ` · ${r.ma_crosses[r.ma_crosses.length - 1].pair} ${r.ma_crosses[r.ma_crosses.length - 1].type === 'golden' ? '골든' : '데드'}크로스` : ''}</div></div>
+    <div class="sig"><div class="sig-k">위치</div><div class="sig-v">${term('이평')} <span class="dots">${Object.entries(r.ma).map(([n, v]) => `<i class="${c > v.value ? 'on' : ''}" title="${n.replace('sma', '')}일선"></i>`).join('')}</span> <b class="mono ${above === 0 ? 'dn' : above === nma ? 'up' : 'warn'}">${above}/${nma}</b> 위</div><div class="sig-d">${r.ma_arrangement || ''}${r.ma_crosses?.length ? ` · ${r.ma_crosses[r.ma_crosses.length - 1].pair} ${r.ma_crosses[r.ma_crosses.length - 1].type === 'golden' ? '골든' : '데드'}크로스` : ''}</div></div>
     <div class="sig"><div class="sig-k">아래 받침</div><div class="sig-v mono ok">${sup ? f(sup.price) : f(r.keys.recent_low10)}</div><div class="sig-d">${sup ? `${term('지지')} ${sup.touches}회 · ${sgn(pct(c, sup.price))} 위` : `최근 저가 · ${sgn(pct(c, r.keys.recent_low10))} 위`}</div></div>
     <div class="sig"><div class="sig-k">위 천장</div><div class="sig-v mono warn">${tl ? f(tl.value_today) : res ? f(res.price) : '—'}</div><div class="sig-d">${tl ? `${term('추세선')} · ${sgn(pct(tl.value_today, c))} 위 · 종가로 넘으면 전환 1차` : res ? `${term('저항')} ${res.touches}회` : ''}</div></div>
     <div class="sig"><div class="sig-k">체온</div><div class="sig-v"><span class="mono ${rv.rsi < 30 ? 'ok' : rv.rsi > 70 ? 'warn' : ''}">${term('RSI')} ${rv.rsi.toFixed(0)}</span> <span class="mono mut">· ${rv.vol_ratio.toFixed(1)}×</span></div><div class="sig-d">${rv.rsi < 30 ? '과매도 · ' : rv.rsi > 70 ? '과매수 · ' : ''}${rv.vol_ratio < 0.7 && chg < 0 ? '거래량 없이 하락(매수 부재)' : rv.vol_ratio > 1.8 && chg < -3 ? '거래량 동반 하락(투매)' : '거래량 보통'}${r.pattern?.type ? ` · ${term('쐐기', r.pattern.type)}${r.pattern.bars_to_apex ? ` ${r.pattern.bars_to_apex}봉` : ''}` : ''}</div></div>
@@ -205,7 +207,7 @@ async function renderTicker(sym) {
     <div class="bar"><a href="#/" class="back">‹</a><h1>${nameOf(sym, J)} <span class="mut mono" style="font-size:12px;font-weight:400">${esc(sym)}</span></h1>
       <span class="mono ${cls(chg)}" style="font-size:22px;font-weight:600">${f(c)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>
       <span class="mut mono" style="font-size:11px">${r.asof} 종가</span>${jd ? `<span style="margin-left:auto">${chip(jd)}</span>` : ''}</div>
-    <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}</div>
+    <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}<small>${esc(PLAIN[jd?.chip] || (conf.length ? '유명한 선 여러 개가 겹치는 가격 근처예요. 한 번 튀어오를 수는 있지만 바닥이 확정된 건 아니에요.' : '가까운 기준선이 없어서 다음 기준선까지 미끄러질 수 있어요.'))}</small></div>
     ${(() => { const items = [...((AL?.alerts || []).filter(x => x.symbol === sym).map(x => ({ t: x.text, lv: x.level, rule: x.rule }))), ...((jd?.watch_today || []).filter(x => !(x.startsWith('★') && (AL?.alerts || []).some(a => a.symbol === sym && a.rule === '합류 구간'))).map(x => ({ t: x, lv: 'mut' })))];
       if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
       return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
