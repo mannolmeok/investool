@@ -35,7 +35,7 @@ async function loadCsv(sym) {
   return txt.trim().split('\n').slice(1).map(l => { const [d, o, h, lo, c, v] = l.split(','); return { time: d, open: +o, high: +h, low: +lo, close: +c, volume: +v }; });
 }
 const sma = (rows, w) => rows.map((r, i) => i < w - 1 ? null : { time: r.time, value: rows.slice(i - w + 1, i + 1).reduce((a, b) => a + b.close, 0) / w }).filter(Boolean);
-const NAMES = { 'INFQ': '인플렉션', '005930.KS': '삼성전자', '000660.KS': 'SK하이닉스', '^KS11': '코스피', '^KQ11': '코스닥', '^GSPC': 'S&P 500', '^VIX': 'VIX', 'SOXX': '반도체 ETF', 'IONQ': '아이온큐', 'RGTI': '리게티', 'QBTS': '디웨이브' };
+const NAMES = { 'INFQ': '인플렉션', '005930.KS': '삼성전자', '000660.KS': 'SK하이닉스', '013030.KQ': '하이록코리아', '054950.KQ': '제이브이엠', '236200.KQ': '슈프리마', '036800.KQ': '나이스정보통신', '200670.KQ': '휴메딕스', '015230.KS': '대창단조', '044960.KQ': '이글벳', '^KS11': '코스피', '^KQ11': '코스닥', '^GSPC': 'S&P 500', '^VIX': 'VIX', 'SOXX': '반도체 ETF', 'IONQ': '아이온큐', 'RGTI': '리게티', 'QBTS': '디웨이브' };
 const nameOf = (s, J) => (J && J[s] && J[s].name) || NAMES[s] || s;
 
 /* ------------------------------------------------------------ 시각 컴포넌트 */

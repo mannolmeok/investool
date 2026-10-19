@@ -1,6 +1,63 @@
 {
   "_doc": "종목별 지수(index)와 업종 대리(peers). 급락 원인 = 지수 기여 / 업종 기여 / 종목 고유 로 분해",
-  "INFQ":      { "index": "^GSPC", "peers": ["IONQ", "RGTI", "QBTS"], "sector": "양자" },
-  "005930.KS": { "index": "^KS11", "peers": ["000660.KS", "SOXX"],    "sector": "반도체" },
-  "000660.KS": { "index": "^KS11", "peers": ["005930.KS", "SOXX"],    "sector": "반도체" }
+  "INFQ": {
+    "index": "^GSPC",
+    "peers": [
+      "IONQ",
+      "RGTI",
+      "QBTS"
+    ],
+    "sector": "양자"
+  },
+  "005930.KS": {
+    "index": "^KS11",
+    "peers": [
+      "000660.KS",
+      "SOXX"
+    ],
+    "sector": "반도체"
+  },
+  "000660.KS": {
+    "index": "^KS11",
+    "peers": [
+      "005930.KS",
+      "SOXX"
+    ],
+    "sector": "반도체"
+  },
+  "013030.KQ": {
+    "index": "^KQ11",
+    "peers": [],
+    "sector": "산업 밸브·피팅"
+  },
+  "054950.KQ": {
+    "index": "^KQ11",
+    "peers": [],
+    "sector": "의료기기"
+  },
+  "236200.KQ": {
+    "index": "^KQ11",
+    "peers": [],
+    "sector": "AI 보안·생체"
+  },
+  "036800.KQ": {
+    "index": "^KQ11",
+    "peers": [],
+    "sector": "결제·VAN"
+  },
+  "200670.KQ": {
+    "index": "^KQ11",
+    "peers": [],
+    "sector": "에스테틱"
+  },
+  "015230.KS": {
+    "index": "^KS11",
+    "peers": [],
+    "sector": "건설기계 부품"
+  },
+  "044960.KQ": {
+    "index": "^KQ11",
+    "peers": [],
+    "sector": "동물약품"
+  }
 }
