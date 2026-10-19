@@ -102,6 +102,17 @@ function ladder(r, rows) {
   }).join('');
   return `<div class="ladder" style="height:${Hfin}px"><div class="ld-axis"></div>${rowsH}</div>`;
 }
+/* 카드·헤더용 핵심 기준선 (손절/지지 · ★합류 · 추세선 · 목표/진입) — 0.6% 이내 중복 제거 */
+function keyLevels(r, jd) {
+  const c = r.close, lv = [];
+  if (jd?.held && jd.stop) lv.push({ label: '손절', price: jd.stop, color: C.dn });
+  else { const sup = r.levels.filter(l => l.price < c).sort((x, y) => y.price - x.price)[0]; lv.push(sup ? { label: '지지', price: sup.price, color: C.ok } : { label: '최근저가', price: r.keys.recent_low10, color: C.dn }); }
+  r.confluence?.slice(0, 2).forEach(g => lv.push({ label: g.price < c ? '★받침' : '★천장', price: g.price, color: g.price < c ? C.ok : C.warn }));
+  if (r.trend_upper) lv.push({ label: '추세선', price: r.trend_upper.value_today, color: C.warn });
+  const t1 = (jd?.rows?.[0]?.cond || '').match(/≥ ([\d,.]+)/); if (t1) lv.push({ label: jd.held ? '목표' : '진입', price: +t1[1].replace(/,/g, ''), color: C.up });
+  const uniq = []; lv.forEach(x => { if (!uniq.some(u => Math.abs(u.price / x.price - 1) < 0.006)) uniq.push(x); });
+  return uniq;
+}
 /* 기여도 바 */
 function contribBar(a) {
   const parts = [['지수', a.index ? a.index.contrib : 0, '#7C9CFF'], ['업종', a.sector ? a.sector.excess1 : 0, C.tag], ['종목 고유', a.idio, C.warn]];
@@ -149,13 +160,7 @@ async function renderDesk() {
   const trs = [];
   const cards = items.map(({ s, r, rows }) => {
     const jd = J?.[s], a = A?.[s], k = r.krw, c = r.close;
-    const lv = [];
-    if (jd?.held && jd.stop) lv.push({ label: '손절', price: jd.stop, color: C.dn });
-    else { const sup = r.levels.filter(l => l.price < c).sort((x, y) => y.price - x.price)[0]; lv.push(sup ? { label: '지지', price: sup.price, color: C.ok } : { label: '최근저가', price: r.keys.recent_low10, color: C.dn }); }
-    r.confluence?.slice(0, 2).forEach(g => lv.push({ label: g.price < c ? '★받침' : '★천장', price: g.price, color: g.price < c ? C.ok : C.warn }));
-    if (r.trend_upper) lv.push({ label: '추세선', price: r.trend_upper.value_today, color: C.warn });
-    const t1 = (jd?.rows?.[0]?.cond || '').match(/≥ ([\d,.]+)/); if (t1) lv.push({ label: jd.held ? '목표' : '진입', price: +t1[1].replace(/,/g, ''), color: C.up });
-    const uniq = []; lv.forEach(x => { if (!uniq.some(u => Math.abs(u.price / x.price - 1) < 0.006)) uniq.push(x); });
+    const uniq = keyLevels(r, jd);
     const chg = r.rsi_volume.chg_pct, rsi = r.rsi_volume.rsi;
     const why = a ? `${a.main_driver} 영향` : '';
     const one = jd?.status || (r.sentences.find(x => x.startsWith('★')) || '').replace(/ —.*$/, '');
@@ -246,6 +251,7 @@ async function renderTicker(sym) {
     <div class="thead"><div class="bar"><a href="#/" class="back">‹</a><h1>${nameOf(sym, J)} <span class="mut mono" style="font-size:12px;font-weight:400">${esc(sym)}</span></h1>${jd ? `<span style="margin-left:auto">${chip(jd)}</span>` : ''}</div>
       <div class="bar"><span class="mono ${cls(chg)}" style="font-size:26px;font-weight:600">${f(c)}</span><span class="mono ${cls(chg)}" style="font-size:14px">${sgn(chg)}</span><span class="mut mono" style="font-size:11px">${r.asof} 종가 · 야후 15분 지연</span></div></div>
     <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}<small>${esc(PLAIN[jd?.chip] || (conf.length ? '유명한 선 여러 개가 겹치는 가격 근처예요. 한 번 튀어오를 수는 있지만 바닥이 확정된 건 아니에요.' : '가까운 기준선이 없어서 다음 기준선까지 미끄러질 수 있어요.'))}</small></div>
+    <div class="pos"><div class="pos-k">지금 어디쯤? <span class="mut">왼쪽 = 아래(받침) · 오른쪽 = 위(천장) · 흰 막대 = 현재가</span></div>${levelBar(keyLevels(r, jd), c, k)}</div>
     ${(() => { const items = [...((AL?.alerts || []).filter(x => x.symbol === sym).map(x => ({ t: x.text, lv: x.level, rule: x.rule }))), ...((jd?.watch_today || []).filter(x => !(x.startsWith('★') && (AL?.alerts || []).some(a => a.symbol === sym && a.rule.startsWith('합류')))).map(x => ({ t: x, lv: 'mut' })))];
       if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
       return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
