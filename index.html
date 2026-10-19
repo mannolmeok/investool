@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E1E1E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>investool · 데스크</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#1E1E1E;--nav:#161616;--panel:#252525;--line:#2A2A2A;--row:#232323;--txt:#DCDDDE;--mut:#8A8A8A;--dim:#B0B0B0;--w:#FFFFFF;--up:#F25C5C;--dn:#4F9CF9;--warn:#F5A623;--ok:#3FBF7F;--tag:#B8A6FF}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.5 'IBM Plex Sans KR',system-ui,sans-serif}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.up{color:var(--up)}.dn{color:var(--dn)}.warn{color:var(--warn)}.ok{color:var(--ok)}.mut{color:var(--mut)}.dim{color:var(--dim)}.w{color:var(--w)}
+.app{display:grid;grid-template-columns:150px 1fr;min-height:100dvh}
+nav{background:var(--nav);border-right:1px solid var(--line);padding:14px 8px;display:flex;flex-direction:column;gap:2px;font-size:12px;position:sticky;top:0;height:100dvh}
+nav .h{padding:6px 10px 12px;font-size:11px;color:var(--mut);letter-spacing:.06em}
+nav a{padding:7px 10px;color:var(--dim);text-decoration:none;border-radius:4px}
+nav a.on{background:#2E2E2E;color:var(--w);font-weight:600}
+nav .foot{margin-top:auto;padding:8px 10px;font-size:11px;color:var(--mut)}
+main{padding:16px 20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.bar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.bar h1{font-size:16px;margin:0;color:var(--w)}
+.tag{padding:2px 7px;border:1px solid var(--tag);color:var(--tag);border-radius:3px;font-size:11px}
+.pill{padding:3px 8px;border:1px solid;border-radius:3px;font-size:12px;font-weight:600}
+section{border:1px solid var(--line);border-radius:6px;overflow:hidden}
+section>header{padding:8px 12px;background:var(--panel);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+section>header small{color:var(--mut);font-weight:400;font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:7px 12px;color:var(--mut);font-weight:400;text-align:left;border-bottom:1px solid var(--line)}
+td{padding:8px 12px;vertical-align:top}
+tr.r:nth-child(even) td{background:var(--row)}
+tr.r{cursor:pointer}tr.r:hover td{background:#2C2C2C}
+.grid2{display:grid;grid-template-columns:1fr 380px;gap:14px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.cells{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line)}
+.cells>div{padding:8px 12px;border-right:1px solid var(--line)}.cells>div:last-child{border-right:0}
+.cells .k{color:var(--mut);font-size:11px}.cells .v{font-size:15px}
+.sent{padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:1.55}
+.sent div{padding-left:14px;text-indent:-14px}
+.sent .conf{color:var(--ok)}.sent .counter{color:var(--mut)}
+#chart{height:360px}
+.lines{padding:8px 12px;font-size:12px;display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;font-family:'IBM Plex Mono',monospace}
+.lines .n{font-family:'IBM Plex Sans KR'}
+.btn{padding:6px 12px;border-radius:4px;border:1px solid #3A3A3A;background:#161616;color:var(--txt);font:inherit;cursor:pointer}
+.btn.pri{background:#3A3A3A;color:var(--w)}
+.tabbar{display:none}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  nav{display:none}
+  main{padding:12px 14px;padding-bottom:70px}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .cells{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tabbar{display:grid;position:fixed;left:0;right:0;bottom:0;grid-template-columns:repeat(4,1fr);background:var(--nav);border-top:1px solid var(--line);font-size:11px;text-align:center;padding-bottom:env(safe-area-inset-bottom)}
+  .tabbar a{padding:10px 0 12px;color:var(--mut);text-decoration:none;border-top:2px solid transparent}
+  .tabbar a.on{color:var(--w);font-weight:600;border-top-color:var(--w)}
+  #chart{height:260px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav>
+    <div class="h">INVESTOOL</div>
+    <a href="#/" data-nav="desk">1 데스크</a>
+    <a href="#/screener" data-nav="screener">2 스크리너 <span class="mut">(P3)</span></a>
+    <a href="#/journal" data-nav="journal">3 일지 <span class="mut">(P3)</span></a>
+    <a href="#/settings" data-nav="settings">4 알림·설정</a>
+    <div class="foot" id="foot">—</div>
+  </nav>
+  <main id="main"></main>
+</div>
+<div class="tabbar">
+  <a href="#/" data-nav="desk">데스크</a><a href="#/screener" data-nav="screener">스크리너</a><a href="#/journal" data-nav="journal">일지</a><a href="#/settings" data-nav="settings">알림</a>
+</div>
+<script src="vendor/lightweight-charts.standalone.production.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
