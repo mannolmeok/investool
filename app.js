@@ -89,16 +89,16 @@ function ladder(r, rows) {
   L.push({ n: '현재가', p: c, col: '#FFFFFF', t: '', now: true });
   const sorted = L.filter(l => l.p >= lo0 && l.p <= hi0).sort((a, b) => b.p - a.p);
   const merged = []; sorted.forEach(l => { const m = merged[merged.length - 1]; if (m && !m.now && !l.now && Math.abs(m.p / l.p - 1) < 0.006) { m.n += ' · ' + l.n; } else merged.push({ ...l }); });
-  const H = Math.max(360, merged.length * 28 + 60);
-  const hi = hi0 * 1.01, lo = lo0 * 0.99;
-  const y = p => (hi - p) / (hi - lo) * H;
-  let lastY = -100; const placed = merged.map(l => { let yy = y(l.p); if (yy - lastY < 24) yy = lastY + 24; lastY = yy; return { ...l, yy, y0: y(l.p) }; });
-  const Hfin = Math.max(H, lastY + 30);
+  // 가까운 선은 넓게, 먼 선은 압축 (로그 거리) — 현재가 ±5% 가 화면의 절반 정도를 차지
+  // 행 간격 = 로그 거리 (최소 24px · 최대 64px) — 가까운 선은 붙고, 먼 선은 너무 멀어지지 않게
+  const zc = p => { const d = pct(p, c); return Math.sign(d) * Math.log1p(Math.abs(d) / 2); };
+  let lastY = 18, lastZ = null; const placed = merged.map(l => { const z = zc(l.p); const yy = lastZ === null ? lastY : lastY + Math.max(24, Math.min(64, (lastZ - z) * 90)); lastY = yy; lastZ = z; return { ...l, yy, y0: yy }; });
+  const Hfin = lastY + 24;
   const rowsH = placed.map(l => {
     const isConf = conf.some(cp => Math.abs(cp / l.p - 1) < 0.012);
     const d = pct(l.p, c);
-    if (l.now) return `<div class="ld-row now" style="top:${l.yy.toFixed(1)}px"><span class="ld-dot" style="transform:translateY(${(l.y0 - l.yy).toFixed(1)}px)"></span><span class="ld-n">현재가</span><span class="ld-p mono">${fmtP(l.p, k)}</span><span class="ld-d mono"></span></div>`;
-    return `<div class="ld-row ${isConf ? 'conf' : ''} ${d >= 0 ? 'above' : 'below'}" style="top:${l.yy.toFixed(1)}px;--c:${l.col}"><span class="ld-dot" style="transform:translateY(${(l.y0 - l.yy).toFixed(1)}px)"></span><span class="ld-n">${term(l.t, l.n)}</span><span class="ld-p mono">${fmtP(l.p, k)}</span><span class="ld-d mono ${cls(d)}">${sgn(d)}</span></div>`;
+    if (l.now) return `<div class="ld-row now" style="top:${l.yy.toFixed(1)}px"><span class="ld-dot"></span><span class="ld-n">현재가</span><span class="ld-p mono">${fmtP(l.p, k)}</span><span class="ld-d mono"></span></div>`;
+    return `<div class="ld-row ${isConf ? 'conf' : ''} ${d >= 0 ? 'above' : 'below'}" style="top:${l.yy.toFixed(1)}px;--c:${l.col}"><span class="ld-dot"></span><span class="ld-n">${term(l.t, l.n)}</span><span class="ld-p mono">${fmtP(l.p, k)}</span><span class="ld-d mono ${cls(d)}">${sgn(d)}</span></div>`;
   }).join('');
   return `<div class="ladder" style="height:${Hfin}px"><div class="ld-axis"></div>${rowsH}</div>`;
 }
