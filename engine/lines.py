@@ -213,6 +213,7 @@ def hull_from_turning_points(df: pd.DataFrame, upper: bool, close: float, lookba
             starts.append(i)
         if not upper and y[i] < nxt.min():
             starts.append(i)
+    found = []
     for x1 in reversed(starts):
         y1 = float(y[x1]); best = None
         for x2 in range(x1 + 2, n):
@@ -229,10 +230,17 @@ def hull_from_turning_points(df: pd.DataFrame, upper: bool, close: float, lookba
             continue
         val_today = y1 + best["slope"] * (n - 1 - x1)
         if abs(val_today / close - 1) <= tol:
-            return {"from": str(d["date"].iloc[x1].date()), "to": str(d["date"].iloc[best["x2"]].date()),
-                    "slope_per_bar": float(best["slope"]), "slope_pct_per_bar": float(best["slope"] / y1 * 100),
-                    "value_today": float(val_today), "touches": int(best["touches"]) + 1, "method": "turning"}
-    return None
+            found.append({"from": str(d["date"].iloc[x1].date()), "to": str(d["date"].iloc[best["x2"]].date()),
+                          "slope_per_bar": float(best["slope"]), "slope_pct_per_bar": float(best["slope"] / y1 * 100),
+                          "value_today": float(val_today), "touches": int(best["touches"]) + 1, "method": "turning", "_x1": x1})
+        if len(found) >= 4:
+            break
+    if not found:
+        return None
+    # 터치 많은 선 우선, 같으면 더 긴(시작이 이른) 선
+    found.sort(key=lambda t: (-t["touches"], t["_x1"]))
+    best = found[0]; best.pop("_x1", None)
+    return best
 
 # ---------------------------------------------------------------- 4. 박스 / 수렴 패턴
 def pattern(df: pd.DataFrame, upper, lower, levels):
