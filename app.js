@@ -155,7 +155,12 @@ async function renderDesk() {
   }).join('');
   main.innerHTML = `
     <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span><span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
-    ${(AL?.alerts || []).length ? `<section class="alerts"><header><span>오늘 알림 ${AL.alerts.length}</span><small>규칙당 하루 1회 · ${AL.asof}</small></header><div class="al-list">${AL.alerts.map(x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w">${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`).join('')}</div></section>` : ''}
+    ${(() => { const al = (AL?.alerts || []); if (!al.length) return '';
+      const pr = { '손절 이탈': 0, '손절 근접': 1, '진입 조건': 2, '추세선 돌파': 3, '하단선 이탈': 4, '합류 받침': 5, 'RSI 과매도': 6, '합류 천장': 7 };
+      const sorted = [...al].sort((a, b) => (pr[a.rule] ?? 9) - (pr[b.rule] ?? 9));
+      const row = x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w">${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`;
+      const head = sorted.slice(0, 4).map(row).join(''), rest = sorted.slice(4).map(row).join('');
+      return `<section class="alerts"><header><span>오늘 알림 ${al.length}</span><small>규칙당 하루 1회 · ${AL.asof}</small></header><div class="al-list">${head}${rest ? `<details class="al-more"><summary>${sorted.length - 4}개 더</summary>${rest}</details>` : ''}</div></section>`; })()}
     <div class="sumrow">${sum || '<span class="mut">판단 결과 없음</span>'}<span class="mut" style="margin-left:auto;font-size:11px">카드 탭 → 종목 페이지</span></div>
     <div class="cards">${cards}</div>
     <div class="mut" style="font-size:12px;padding:2px 2px 0">시장 맥락</div>

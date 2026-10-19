@@ -87,10 +87,16 @@ def judge_one(p: dict, r: dict, rules: dict) -> dict:
             else:
                 status, chip = f"조건 대기 — 추세선까지 {pct(tl_val, close):+.1f}%", "wait"
         else:
-            if conf:
-                status, chip = f"관망 — ★합류 {f(conf[0]['price'])} ({pct(conf[0]['price'], close):+.1f}%) 반응 확인 전", "wait"
+            cb = [g for g in conf if g["price"] < close]; ca = [g for g in conf if g["price"] >= close]
+            rv0 = r.get("rsi_volume", {})
+            if cb:
+                status, chip = f"관망 — ★받침 {f(cb[0]['price'])} ({pct(cb[0]['price'], close):+.1f}%) 위. 반등 확인 전 진입 없음", "wait"
+            elif ca:
+                status, chip = f"관망 — ★천장 {f(ca[0]['price'])} ({pct(ca[0]['price'], close):+.1f}%) 아래. 종가 돌파 시 재검토", "wait"
+            elif rv0.get("rsi", 50) < 30:
+                status, chip = f"관망 — RSI {rv0['rsi']:.0f} 과매도, 받침은 없음. 거래량 동반 반등 기다림", "wait"
             else:
-                status, chip = "관망 — 기준선 사이 빈 공간", "wait"
+                status, chip = "관망 — 가까운 기준선 없음", "wait"
 
     # 오늘 볼 것 (공통)
     if tl_val:
@@ -115,7 +121,10 @@ def main():
     cfg = json.loads((ROOT / "positions.json").read_text(encoding="utf-8"))
     rules = cfg.get("rules", {})
     out = {}
-    for p in cfg["positions"]:
+    pos_by = {p["symbol"]: p for p in cfg["positions"]}
+    wl = [s.strip() for s in (ROOT / "watchlist.txt").read_text().splitlines() if s.strip() and not s.startswith("#")]
+    allp = [pos_by.get(s, {"symbol": s, "lot": "관찰"}) for s in wl] + [p for s, p in pos_by.items() if s not in wl]
+    for p in allp:
         jp = OUT / f"{p['symbol']}.json"
         if not jp.exists():
             out[p["symbol"]] = {"symbol": p["symbol"], "status": "분석 결과 없음", "chip": "none", "rows": [], "watch_today": [], "flags": []}
