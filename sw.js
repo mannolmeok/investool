@@ -1,5 +1,5 @@
 /* investool service worker — 앱 셸 캐시 + 푸시 수신 */
-const V = 'investool-v6';
+const V = 'investool-v7';
 const SHELL = ['./', './index.html', './app.js', './config.js', './manifest.webmanifest', './vendor/lightweight-charts.standalone.production.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

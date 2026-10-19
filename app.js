@@ -1,8 +1,16 @@
 /* investool PWA v2 — 시각 우선. out/*.json + data/*.csv 만 읽는다 (서버 없음) */
 const $ = (s, el = document) => el.querySelector(s);
 const main = $('#main');
-const C = { up: '#F25C5C', dn: '#4F9CF9', warn: '#F5A623', ok: '#3FBF7F', tag: '#B8A6FF', mut: '#8A8A8A', line: '#2A2A2A', txt: '#DCDDDE', ma20: '#7C9CFF', ma60: '#E8891D', ma120: '#B8A6FF', ma200: '#FFFFFF' };
-C.sma20 = C.ma20; C.sma60 = C.ma60; C.sma120 = C.ma120; C.sma200 = C.ma200;
+const C = { ma20: '#7C9CFF', ma60: '#E8891D', ma120: '#B8A6FF' };
+/* 테마 토큰은 CSS 변수에서 읽는다 (다크/라이트 공용) */
+function syncTheme() {
+  const v = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  Object.assign(C, { up: v('--up'), dn: v('--dn'), warn: v('--warn'), ok: v('--ok'), tag: v('--tag'), mut: v('--mut'), line: v('--line'), txt: v('--txt'), bg: v('--bg'), w: v('--w') });
+  C.ma200 = C.w; C.ma120 = C.tag; C.sma20 = C.ma20; C.sma60 = C.ma60; C.sma120 = C.ma120; C.sma200 = C.ma200;
+  const m = document.getElementById('themeColor'); if (m) m.content = v('--nav') || C.bg;
+}
+function setTheme(t) { localStorage.setItem('theme', t); const real = t === 'system' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : t; document.documentElement.dataset.theme = real; syncTheme(); }
+syncTheme();
 
 const fmtP = (v, krw) => v == null ? '—' : krw ? Math.round(v).toLocaleString('ko-KR') : v.toFixed(2);
 const pct = (a, b) => ((a / b - 1) * 100);
@@ -86,7 +94,7 @@ function ladder(r, rows) {
   const win = (rows || []).slice(-80);
   const lo0 = win.length ? Math.min(...win.map(x => x.low), c * 0.95) : c * 0.8, hi0 = win.length ? Math.max(...win.map(x => x.high), c * 1.05) : c * 1.3;
   // 같은 가격(0.6% 이내) 합치기
-  L.push({ n: '현재가', p: c, col: '#FFFFFF', t: '', now: true });
+  L.push({ n: '현재가', p: c, col: C.w, t: '', now: true });
   const sorted = L.filter(l => l.p >= lo0 && l.p <= hi0).sort((a, b) => b.p - a.p);
   const merged = []; sorted.forEach(l => { const m = merged[merged.length - 1]; if (m && !m.now && !l.now && Math.abs(m.p / l.p - 1) < 0.006) { m.n += ' · ' + l.n; } else merged.push({ ...l }); });
   // 가까운 선은 넓게, 먼 선은 압축 (로그 거리) — 현재가 ±5% 가 화면의 절반 정도를 차지
@@ -276,7 +284,7 @@ async function renderTicker(sym) {
 function drawChart(rows, r) {
   const el = $('#chart'); if (!el || !window.LightweightCharts || !rows.length) return; const k = r.krw;
   const chart = LightweightCharts.createChart(el, {
-    layout: { background: { color: '#1E1E1E' }, textColor: C.mut, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 },
+    layout: { background: { color: C.bg }, textColor: C.mut, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 },
     grid: { vertLines: { color: C.line }, horzLines: { color: C.line } },
     rightPriceScale: { borderColor: C.line, scaleMargins: { top: 0.08, bottom: 0.22 } }, timeScale: { borderColor: C.line, rightOffset: 8 },
     crosshair: { mode: 0 }, localization: { locale: 'ko-KR', priceFormatter: v => fmtP(v, k) },
@@ -285,7 +293,7 @@ function drawChart(rows, r) {
   cs.setData(rows);
   const vs = chart.addHistogramSeries({ priceScaleId: '', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
   vs.priceScale().applyOptions({ scaleMargins: { top: 0.84, bottom: 0 } });
-  vs.setData(rows.map(x => ({ time: x.time, value: x.volume, color: x.close >= x.open ? 'rgba(242,92,92,.4)' : 'rgba(79,156,249,.4)' })));
+  vs.setData(rows.map(x => ({ time: x.time, value: x.volume, color: (x.close >= x.open ? C.up : C.dn) + '66' })));
   [[20, C.ma20], [60, C.ma60], [120, C.ma120], [200, C.ma200]].forEach(([w, col]) => {
     if (rows.length >= w) chart.addLineSeries({ color: col, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }).setData(sma(rows, w));
   });
@@ -324,9 +332,11 @@ async function renderSettings() {
       <div>· 브라우저 지원: <b class="${supported ? 'ok' : 'dn'}">${supported ? '됨' : '안 됨'}</b> · 권한: <b>${perm}</b></div>
       ${ios && !standalone ? '<div class="warn">· 아이폰은 공유 → "홈 화면에 추가" 후 그 아이콘으로 열어야 알림이 옵니다.</div>' : ''}
       <div style="text-indent:0;padding-left:0"><button class="btn pri" id="btnNotif">알림 켜기</button> <span class="mut" id="notifMsg"></span></div></div></section>
+    <section><header><span>화면</span><small>다크가 기본 · 밝은 곳에선 라이트</small></header><div class="sent"><div style="text-indent:0;padding-left:0"><span class="vt" style="margin:0" id="themeSel">${['dark', 'light', 'system'].map(t => `<button data-t="${t}" class="${(localStorage.getItem('theme') || 'dark') === t ? 'on' : ''}">${{ dark: '다크', light: '라이트', system: '기기 설정' }[t]}</button>`).join('')}</span></div></div></section>
     <section><header><span>데이터 상태</span><small>종목별 마지막 종가일</small></header><div class="sent">${Object.values(J || {}).map(x => { const d = x.asof ? Math.round((Date.now() - new Date(x.asof)) / 864e5) : null; return `<div><b class="w">${esc(x.name || x.symbol)}</b> <span class="mono ${d > 4 ? 'warn' : 'mut'}">${x.asof || '—'}${d != null ? ` (${d}일 전)` : ''}</span></div>`; }).join('') || '<div class="mut">—</div>'}<div class="mut">야후 파이낸스 일봉 · 15분 지연 · 장중 봉은 제외 · 국내 봉은 야후 반영이 반나절 늦을 때가 있음</div></div></section>
     <section><header><span>관심 종목</span><small>watchlist.txt</small></header><div class="sent"><div>· 저장소의 <span class="mono">watchlist.txt</span>에 야후 심볼 한 줄 추가 → 다음 배치부터 (코스피 .KS / 코스닥 .KQ)</div></div></section>
     <section><header><span>용어</span><small>탭하면 설명</small></header><div class="sent">${Object.keys(G).map(k => `<div>${term(k)} <span class="mut">${esc(G[k])}</span></div>`).join('')}</div></section>`;
+  document.querySelectorAll('#themeSel button').forEach(b => b.onclick = () => { setTheme(b.dataset.t); document.querySelectorAll('#themeSel button').forEach(x => x.classList.toggle('on', x === b)); });
   $('#btnNotif').onclick = async () => {
     const m = $('#notifMsg'); const cfg = window.INVESTOOL_CONFIG || {};
     if (!supported) { m.textContent = '이 브라우저는 푸시를 지원하지 않아요.'; return; }
