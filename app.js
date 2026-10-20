@@ -507,7 +507,11 @@ async function renderTicker(sym) {
       TFD[tf] = { rows: rr, r: ra };
     }
     const D = TFD[tf]; const el = $('#chart'); el.innerHTML = '';
-    if (!D.rows.length || !D.r) { el.innerHTML = `<div class="mut" style="padding:20px">${UNIT[tf]}봉 데이터는 다음 배치(15:43 / 05:13) 후에 생겨요.</div>`; $('#clegend').innerHTML = ''; return; }
+    if (!D.rows.length || !D.r) {
+      const inWl = (await loadWatchlist()).includes(sym);
+      el.innerHTML = `<div class="mut" style="padding:20px;line-height:1.6">${UNIT[tf]}봉 데이터가 아직 없어요.<br>${inWl ? '관심 종목이라 다음 배치(15:43 / 05:13) 때 자동으로 받아요.' : '관심 종목이 아니라서 자동 수집 대상이 아니에요. 데스크 검색창에서 이 종목을 다시 <b>분석</b>하면 주·월·1시간봉까지 같이 받아요.'}</div>`;
+      $('#clegend').innerHTML = ''; delete TFD[tf]; return;
+    }
     drawChart(D.rows, { ...D.r, close: tf === 'h' ? r.close : D.r.close }, all, jd, tf); $('#clegend').innerHTML = legendHTML(all, tf); bindTerms();
   };
   document.querySelectorAll('#chartTf button').forEach(b => b.onclick = () => { LS.set('chartTf', b.dataset.tf); document.querySelectorAll('#chartTf button').forEach(x => x.classList.toggle('on', x === b)); redraw(); });

@@ -45,6 +45,18 @@ def main():
     wl = ROOT / "watchlist.txt"; lines = wl.read_text().splitlines()
     if add and sym not in [l.strip() for l in lines]:
         wl.write_text("\n".join(lines + [sym]) + "\n")
+    # 주봉·월봉·1시간봉 + 큰 그림도 같이 (관심 종목이 아니어도)
+    from fetch import fetch_tf
+    for tf in ("w", "m", "h"):
+        try:
+            fetch_tf(sym, tf)
+        except Exception as e:
+            print(f"{sym}.{tf} FAIL", e)
+    try:
+        from mtf import main as mtf_main
+        mtf_main([sym])
+    except Exception as e:
+        print("mtf fail", e)
     from judge import main as judge_main
     judge_main()  # 판단 보드 갱신(관심 종목이면 카드에 반영)
     lf = out / "lookup.json"

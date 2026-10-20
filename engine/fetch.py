@@ -80,6 +80,20 @@ def fetch_tf(sym: str, tf: str) -> int:
             rows[-1] = f"{d},{f(q['open'][i])},{f(q['high'][i])},{f(q['low'][i])},{f(q['close'][i])},{int(q['volume'][i] or 0)}"; continue
         seen.add(d)
         rows.append(f"{d},{f(q['open'][i])},{f(q['high'][i])},{f(q['low'][i])},{f(q['close'][i])},{int(q['volume'][i] or 0)}")
+    # 야후가 신규 상장 종목에 1wk/1mo 대신 일봉을 주는 경우가 있음 → 직접 주·월 단위로 묶는다
+    if tf in ("w", "m") and len(rows) > 1:
+        from datetime import date as _d
+        buckets = {}
+        for l in rows[1:]:
+            d, o, h, lo, c, v = l.split(",")
+            y, mo, da = map(int, d.split("-"))
+            k = (_d(y, mo, da) - __import__("datetime").timedelta(days=_d(y, mo, da).weekday())).isoformat() if tf == "w" else f"{y:04d}-{mo:02d}-01"
+            b = buckets.get(k)
+            if b is None:
+                buckets[k] = [k, float(o), float(h), float(lo), float(c), int(v)]
+            else:
+                b[2] = max(b[2], float(h)); b[3] = min(b[3], float(lo)); b[4] = float(c); b[5] += int(v)
+        rows = ["date,open,high,low,close,volume"] + [f"{b[0]},{f(b[1])},{f(b[2])},{f(b[3])},{f(b[4])},{b[5]}" for k, b in sorted(buckets.items())]
     if len(rows) > 3:
         (DATA / f"{sym}.{tf}.csv").write_text("\n".join(rows) + "\n", encoding="utf-8")
     return len(rows) - 1

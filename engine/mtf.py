@@ -62,9 +62,10 @@ def near_lines(daily_close, r, tf, band=0.03):
     return res
 
 
-def main():
-    syms = [s.strip() for s in (ROOT / "watchlist.txt").read_text().splitlines() if s.strip() and not s.startswith("#")]
-    M = {}
+def main(only=None):
+    syms = only or [s.strip() for s in (ROOT / "watchlist.txt").read_text().splitlines() if s.strip() and not s.startswith("#")]
+    mp = OUT / "mtf.json"
+    M = json.loads(mp.read_text(encoding="utf-8")) if (only and mp.exists()) else {}
     for s in syms:
         dj = OUT / f"{s}.json"
         if not dj.exists():
