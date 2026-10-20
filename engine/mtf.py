@@ -25,7 +25,9 @@ def summarize(r, tf):
     sup = sorted([l["price"] for l in r.get("levels", []) if l["price"] < c] + [g["price"] for g in conf if g["price"] < c], reverse=True)
     res = sorted([l["price"] for l in r.get("levels", []) if l["price"] >= c] + [g["price"] for g in conf if g["price"] >= c])
     rsi = (r.get("rsi_volume") or {}).get("rsi")
-    if ma and not above:
+    if not ma:
+        trend = "기간 짧음(상장 초기)"
+    elif not above:
         trend = "하락 추세"
     elif ma and len(above) == len(ma):
         trend = "상승 추세"
