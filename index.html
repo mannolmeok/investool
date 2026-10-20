@@ -59,6 +59,8 @@ section>header small{color:var(--mut);font-weight:400;font-size:11px}
 .card{border-left:3px solid var(--line)}
 .card.st-exit{border-left-color:var(--up)}.card.st-warn{border-left-color:var(--warn)}.card.st-enter,.card.st-target{border-left-color:var(--ok)}.card.st-hold{border-left-color:var(--tag)}
 [hidden]{display:none!important}
+.lvtag{display:inline-block;margin:0 8px 4px 0;padding:1px 8px;border-radius:10px;font-size:10.5px;font-weight:500;background:var(--panel);color:var(--ok);border:1px solid var(--ok)}
+.addw{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;padding:2px 0 4px}
 .bp-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
 .bp-c{padding:10px 14px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:5px;font-size:12px}.bp-c:first-child{border-left:0}.bp-c.off{opacity:.5}
 .bp-h{font-weight:700;color:var(--w);font-size:13px}.bp-h small{font-weight:400;color:var(--mut);font-size:10.5px;margin-left:6px}
@@ -284,6 +286,7 @@ details summary{padding:8px 12px;background:var(--panel);cursor:pointer;font-wei
 </div>
 <script src="config.js"></script>
 <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
+<script src="engine.js" defer></script>
 <script src="app.js" defer></script>
 </body>
 </html>

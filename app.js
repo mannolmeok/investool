@@ -76,7 +76,7 @@ async function loadCsv(sym) {
 }
 const sma = (rows, w) => rows.map((r, i) => i < w - 1 ? null : { time: r.time, value: rows.slice(i - w + 1, i + 1).reduce((a, b) => a + b.close, 0) / w }).filter(Boolean);
 const NAMES = { 'INFQ': '인플렉션', '005930.KS': '삼성전자', '000660.KS': 'SK하이닉스', '013030.KQ': '하이록코리아', '054950.KQ': '제이브이엠', '236200.KQ': '슈프리마', '036800.KQ': '나이스정보통신', '200670.KQ': '휴메딕스', '015230.KS': '대창단조', '044960.KQ': '이글벳', '^KS11': '코스피', '^KQ11': '코스닥', '^GSPC': 'S&P 500', '^VIX': 'VIX', 'SOXX': '반도체 ETF', 'IONQ': '아이온큐', 'RGTI': '리게티', 'QBTS': '디웨이브' };
-const nameOf = (s, J) => (J && J[s] && J[s].name && J[s].name !== s ? J[s].name : null) || NAMES[s] || s;
+const nameOf = (s, J) => (J && J[s] && J[s].name && J[s].name !== s ? J[s].name : null) || NAMES[s] || (() => { try { return JSON.parse(LS.get('names') || '{}')[s]; } catch { return null; } })() || s;
 
 /* ------------------------------------------------------------ 시각 컴포넌트 */
 function sparkline(vals, color, w = 90, h = 28) {
@@ -232,7 +232,7 @@ async function renderDesk() {
   const table = `<div class="tbl"><div class="tr"><span>종목</span><span>종가</span><span>받침 ↔ 천장 (현재 위치)</span><span class="d">아래선까지</span><span class="d">위선까지</span><span class="d">RSI</span><span>상태</span></div>${trs.map(x => `<a class="tr" href="#/t/${encodeURIComponent(x.s)}" title="${esc(x.one)}"><span class="n lgrow">${logo(x.s, nameOf(x.s, J), 26)}<span>${nameOf(x.s, J)}<small>${esc(x.s)}</small></span></span><span class="pr ${cls(x.chg)}" data-live-cls="${esc(x.s)}"><span data-live-p="${esc(x.s)}" data-k="${x.k ? 1 : 0}">${fmtP(x.c, x.k)}</span><small data-live-c="${esc(x.s)}">${sgn(x.chg)}</small></span>${miniBar(x)}<span class="d hd">${dist(x.below, x.c)}</span><span class="d hd">${dist(x.abv, x.c)}</span><span class="d hd ${x.rsi < 30 ? 'ok' : x.rsi > 70 ? 'warn' : 'mut'}">${x.rsi.toFixed(0)}</span><span>${chip(x.jd)}</span></a>`).join('')}</div>`;
   const view = LS.get('deskView') || 'card';
   main.innerHTML = `
-    <form class="find" id="findF" autocomplete="off"><input id="findQ" placeholder="종목 찾기 — 이름·코드·미국 티커 (예: 한화에어로스페이스, NVDA)" enterkeyhint="search"><button class="btn pri">분석</button></form><div id="findMsg" class="find-msg" hidden></div>
+    <form class="find" id="findF" autocomplete="off"><input id="findQ" placeholder="종목 찾기 — 이름·코드·미국 티커 (예: 한화에어로스페이스, NVDA) · 바로 분석" enterkeyhint="search"><button class="btn pri">분석</button></form><div id="findMsg" class="find-msg" hidden></div>
     <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span><span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
     ${(() => { const al = (AL?.alerts || []); if (!al.length) return '';
       const pr = { '손절 이탈': 0, '손절 근접': 1, '진입 조건': 2, '추세선 돌파': 3, '수급 전환': 4, '하단선 이탈': 5, '합류 받침': 6, 'RSI 과매도': 7, '합류 천장': 8 };
@@ -255,6 +255,83 @@ async function renderDesk() {
   $('#foot').textContent = `읽음 ${stamp()}`;
 }
 
+/* ------------------------------------------------------------ 즉시 계산 (중계 + engine.js)
+   배치 결과가 있으면 먼저 그것을 보여주고, 뒤에서 최신 데이터로 다시 계산해 바뀌었으면 조용히 교체.
+   배치 결과가 없는 종목(검색)은 여기서 바로 계산. 판단 보드·손절 판정은 계속 배치(종가) 기준. */
+const QURL = () => ((window.INVESTOOL_CONFIG || {}).QUOTE_URL || '').replace(/\/$/, '');
+async function lvGet(path) { const u = QURL(); if (!u) return null; try { const r = await fetch(u + path); return r.ok ? await r.json() : null; } catch { return null; } }
+async function lvChart(sym, tf) {
+  const j0 = await lvGet(`/c?s=${encodeURIComponent(sym)}&tf=${tf}`); if (!j0?.rows?.length) return null;
+  const rows = j0.rows.map(([t, o, h, l, c, v]) => ({ time: tf === 'h' ? t + 9 * 3600 : t, open: o, high: h, low: l, close: c, volume: v }));
+  return { rows, open: j0.open };
+}
+const engRows = rows => rows.map(r => ({ date: r.time, open: r.open, high: r.high, low: r.low, close: r.close, volume: r.volume }));
+function lvFlows(t) {  // flows.py analyze 와 같은 계산
+  if (!t?.length) return null;
+  const daily = [...t].reverse().map(x => { const c = x.close || 0; return { d: x.date, f: Math.round((x.foreign || 0) * c / 1e7) / 10, o: Math.round((x.organ || 0) * c / 1e7) / 10, i: Math.round((x.indiv || 0) * c / 1e7) / 10, hr: x.foreign_ratio, c }; });
+  const cum = { f: [], o: [], i: [] }, acc = { f: 0, o: 0, i: 0 };
+  daily.forEach(d => ['f', 'o', 'i'].forEach(k => { acc[k] += d[k]; cum[k].push(Math.round(acc[k] * 10) / 10); }));
+  const S = (k, n) => Math.round(daily.slice(-n).reduce((s, d) => s + d[k], 0) * 10) / 10;
+  const streak = k => { const L = daily[daily.length - 1][k], sg = L > 0 ? 1 : L < 0 ? -1 : 0; let n = 0; for (let i = daily.length - 1; i >= 0; i--) { const v = daily[i][k]; if (sg && v !== 0 && (v > 0) === (sg > 0)) n++; else break; } return sg * n; };
+  const sm = Object.fromEntries(['f', 'o', 'i'].map(k => [k, { 5: S(k, 5), 20: S(k, 20), 60: S(k, 60) }]));
+  const fo = { 5: Math.round((sm.f[5] + sm.o[5]) * 10) / 10, 20: Math.round((sm.f[20] + sm.o[20]) * 10) / 10, 60: Math.round((sm.f[60] + sm.o[60]) * 10) / 10 };
+  const hr = daily.map(d => d.hr).filter(x => x != null), hchg = hr.length > 1 ? Math.round((hr[hr.length - 1] - hr[0]) * 100) / 100 : null;
+  let state, tone;
+  if (fo[20] <= 0 && 0 < fo[5]) [state, tone] = ['전환 — 팔던 외국인·기관이 최근 5일 사기 시작', 'ok'];
+  else if (fo[5] > 0 && fo[20] > 0) [state, tone] = ['유입 — 외국인·기관이 계속 사는 중', 'up'];
+  else if (fo[5] < 0 && fo[20] < 0) [state, tone] = [sm.i[20] > 0 ? '이탈 — 외국인·기관이 계속 파는 중 (개인이 받는 중)' : '이탈 — 외국인·기관이 계속 파는 중', 'dn'];
+  else if (fo[20] > 0 && 0 >= fo[5]) [state, tone] = ['주춤 — 사던 외국인·기관이 최근 5일 멈춤/매도', 'warn'];
+  else [state, tone] = ['혼조', 'mut'];
+  const fs = streak('f'), os = streak('o'), bits = [state];
+  if (Math.abs(fs) >= 3) bits.push(`외국인 ${Math.abs(fs)}일 연속 ${fs > 0 ? '순매수' : '순매도'}`);
+  if (Math.abs(os) >= 3) bits.push(`기관 ${Math.abs(os)}일 연속 ${os > 0 ? '순매수' : '순매도'}`);
+  if (hchg != null && Math.abs(hchg) >= 0.3) bits.push(`외국인 보유율 60일 ${hchg >= 0 ? '+' : ''}${hchg.toFixed(2)}%p`);
+  return { asof: daily[daily.length - 1].d, daily, cum, sum: sm, fo, streak: { f: fs, o: os }, hold: { now: hr.length ? hr[hr.length - 1] : null, chg60: hchg }, state, tone, sentence: bits.join(' · ') };
+}
+function lvMtf(rd, W, M) {  // mtf.py summarize / near_lines / strong 와 같은 계산
+  const U = { w: '주', m: '월' }, out = { near: [], strong: [] };
+  const summ = (r, tf) => {
+    const c = r.close, ma = r.ma || {}, above = Object.values(ma).filter(v => c > v.value).length, n = Object.keys(ma).length;
+    const conf = r.confluence || [], tl = r.trend_upper || {};
+    const sup = [...(r.levels || []).filter(l => l.price < c).map(l => l.price), ...conf.filter(g => g.price < c).map(g => g.price)].sort((a, b) => b - a);
+    const res = [...(r.levels || []).filter(l => l.price >= c).map(l => l.price), ...conf.filter(g => g.price >= c).map(g => g.price)].sort((a, b) => a - b);
+    const trend = !n ? '기간 짧음(상장 초기)' : above === 0 ? '하락 추세' : above === n ? '상승 추세' : '횡보·전환 구간';
+    const rsi = r.rsi_volume?.rsi, bits = [`${U[tf]}봉 ${trend}`, `이평 ${above}/${n}개 위`];
+    if (rsi != null) bits.push(`RSI ${rsi.toFixed(0)}` + (rsi < 30 ? ' 과매도' : rsi > 70 ? ' 과매수' : ''));
+    return { asof: r.asof, close: c, trend, above, n_ma: n, rsi, sup: sup[0] ?? null, res: res[0] ?? null, sentence: bits.join(' · ') };
+  };
+  const near = (r, tf) => {
+    const u = U[tf], L = [];
+    Object.entries(r.ma || {}).forEach(([k, v]) => L.push([`${k.replace('sma', '')}${u}선`, v.value]));
+    (r.levels || []).forEach(l => L.push([`${u}봉 ${l.price < rd.close ? '지지' : '저항'}(${l.touches}회)`, l.price]));
+    if (r.trend_upper) L.push([r.trend_upper.slope_per_bar < 0 ? `${u}봉 하락 추세선` : `${u}봉 상단 추세선`, r.trend_upper.value_today]);
+    if (r.trend_lower) L.push([r.trend_lower.slope_per_bar > 0 ? `${u}봉 상승 추세선` : `${u}봉 하단 추세선`, r.trend_lower.value_today]);
+    Object.entries(r.fib?.levels || {}).forEach(([k, v]) => L.push([`${u}봉 피보 ${k}`, v]));
+    if (r.bollinger?.lower) L.push([`${u}봉 볼린저 하단`, r.bollinger.lower]);
+    return L.filter(([, p]) => p && Math.abs(p / rd.close - 1) <= 0.03).map(([label, p]) => ({ tf, label, price: p, pct: Math.round((p / rd.close - 1) * 10000) / 100 }));
+  };
+  if (W) { out.w = summ(W, 'w'); out.near.push(...near(W, 'w')); }
+  if (M) { out.m = summ(M, 'm'); out.near.push(...near(M, 'm')); }
+  out.near.sort((a, b) => Math.abs(a.pct) - Math.abs(b.pct));
+  (rd.confluence || []).forEach(g => { const hits = out.near.filter(n => Math.abs(n.price / g.price - 1) <= 0.015); if (hits.length) out.strong.push({ price: g.price, side: g.price < rd.close ? '받침' : '천장', with: hits.map(h => h.label) }); });
+  return (out.w || out.m) ? out : null;
+}
+async function lvBundle(sym) {
+  if (!QURL() || !window.Engine) return null;
+  const kr = /\.(KS|KQ)$/.test(sym);
+  const [d, w, m, ft] = await Promise.all([lvChart(sym, 'd'), lvChart(sym, 'w'), lvChart(sym, 'm'), kr ? lvGet(`/f?s=${sym}`) : null]);
+  if (!d || d.rows.length < 40) return null;
+  const r = Engine.analyze(engRows(d.rows), sym);
+  const an = x => { try { return x && x.rows.length >= 20 ? Engine.analyze(engRows(x.rows), sym) : null; } catch { return null; } };
+  const rw = an(w), rm = m && m.rows.length >= 15 ? an(m) : null;
+  return { r, rows: d.rows, open: d.open, w: w ? { rows: w.rows, r: rw } : null, m: m ? { rows: m.rows, r: rm } : null, M: lvMtf(r, rw, rm), F: Array.isArray(ft) ? lvFlows(ft) : null, at: new Date() };
+}
+async function lvRefresh(sym, r0) {
+  const b = await lvBundle(sym); if (!b) return;
+  if (location.hash !== '#/t/' + encodeURIComponent(sym) && decodeURIComponent(location.hash.slice(4)) !== sym) return;
+  if (b.r.asof === r0.asof && b.r.close === r0.close) return;  // 바뀐 게 없으면 그대로
+  const y = window.scrollY; await renderTicker(sym, b); window.scrollTo(0, y);
+}
 /* 큰 그림 — 월봉·주봉·일봉을 한 줄로 */
 function bigPicture(M, r) {
   if (!M || (!M.w && !M.m)) return '';
@@ -326,25 +403,29 @@ function bindFind(J) {
     const known = [...Object.values(J || {}).map(x => ({ symbol: x.symbol, name: x.name })), ...LK];
     const hit = known.find(x => [norm(x.symbol), norm(x.name), norm(x.symbol).slice(0, 6), norm(x.q)].includes(norm(q)));
     if (hit && await j(`out/${hit.symbol}.json`)) { location.hash = '#/t/' + encodeURIComponent(hit.symbol); return; }
-    const tok = LS.get('ghToken');
-    if (!tok) {
-      msg.innerHTML = `<b>${esc(q)}</b>은(는) 아직 분석 전이에요. <a href="https://github.com/${REPO}/actions/workflows/analyze.yml" target="_blank" rel="noopener">GitHub에서 실행</a> → <b>Run workflow</b> → 칸에 <b>${esc(q)}</b> 입력 → 2~3분 뒤 다시 검색.<br><span class="mut">알림·설정에서 GitHub 토큰을 넣어두면 이 버튼 한 번으로 끝나요.</span>`;
-      return;
+    // 즉시: 이름·코드 → 중계 검색 → 바로 종목 페이지 (그 자리에서 계산)
+    if (QURL()) {
+      msg.innerHTML = `<b>${esc(q)}</b> 찾는 중…`;
+      let sym = null, name = q;
+      if (/[가-힣]/.test(q) || /^\d{6}$/.test(q)) {
+        const res = await lvGet('/s?q=' + encodeURIComponent(q));
+        const h = (res || []).find(x => x.name === q) || (res || [])[0];
+        if (h) { sym = h.symbol; name = h.name; }
+      } else if (/^\d{6}\.(KS|KQ)$/i.test(q) || /^[A-Za-z][A-Za-z0-9.\-]{0,9}$/.test(q)) { sym = q.toUpperCase(); name = sym; }
+      if (!sym) { msg.innerHTML = `<b>${esc(q)}</b> — 종목을 못 찾았어요. 이름을 정확히 쓰거나 6자리 코드로 검색해 보세요.`; return; }
+      try { const N = JSON.parse(LS.get('names') || '{}'); N[sym] = name; LS.set('names', JSON.stringify(N)); } catch { }
+      msg.hidden = true; location.hash = '#/t/' + encodeURIComponent(sym); return;
     }
-    msg.innerHTML = `<b>${esc(q)}</b> 분석 시작… (데이터 받기 → 선 긋기 → 사이트 반영까지 2~3분)`;
-    const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/analyze.yml/dispatches`, { method: 'POST', headers: { Authorization: `Bearer ${tok}`, Accept: 'application/vnd.github+json' }, body: JSON.stringify({ ref: 'main', inputs: { q, add: 'false' } }) }).catch(() => null);
-    if (!res || res.status !== 204) { msg.innerHTML = `실행 실패 (${res ? res.status : '네트워크'}) — 토큰 권한(Actions: Read and write)을 확인해 주세요.`; return; }
-    const t0 = Date.now();
-    const tick = async () => {
-      const sec = Math.round((Date.now() - t0) / 1000);
-      try { const r = await fetch('out/lookup.json?_=' + Date.now(), { cache: 'no-store' }); const L = r.ok ? await r.json() : [];
-        const h = L.find(x => norm(x.q) === norm(q)); if (h) { msg.innerHTML = `완료 — ${esc(h.name)} 여는 중`; delete cache[`out/${h.symbol}.json`]; location.hash = '#/t/' + encodeURIComponent(h.symbol); return; } } catch { }
-      if (sec > 420) { msg.innerHTML = '7분이 지나도 결과가 없어요. 종목명을 다시 확인하거나 GitHub Actions 기록을 봐주세요.'; return; }
-      msg.innerHTML = `<b>${esc(q)}</b> 분석 중… ${sec}초 <span class="mut">(이 화면을 열어두면 끝나는 대로 이동)</span>`;
-      setTimeout(tick, 10000);
-    };
-    setTimeout(tick, 15000);
+    msg.innerHTML = '실시간 중계 주소(QUOTE_URL)가 설정돼 있지 않아요.';
   };
+}
+/* 관심 종목에 추가 (GitHub 토큰 있으면 원탭, 없으면 안내) */
+async function addToWatch(sym) {
+  const tok = LS.get('ghToken'), m = $('#addMsg');
+  if (!tok) { m.innerHTML = `토큰이 없어요. 저한테 "<b>${esc(nameOf(sym))} 관심 종목에 추가</b>"라고 말해주거나, 알림·설정에서 GitHub 토큰을 넣어두면 이 버튼으로 바로 추가돼요.`; return; }
+  m.textContent = '추가 요청 중…';
+  const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/analyze.yml/dispatches`, { method: 'POST', headers: { Authorization: `Bearer ${tok}`, Accept: 'application/vnd.github+json' }, body: JSON.stringify({ ref: 'main', inputs: { q: sym, add: 'true' } }) }).catch(() => null);
+  m.textContent = res && res.status === 204 ? '추가 요청 완료 — 2~3분 뒤부터 매일 판단·알림 대상이에요.' : `실패 (${res ? res.status : '네트워크'}) — 토큰 권한(Actions: Read and write) 확인`;
 }
 /* 수급 — "내 뒤에 사줄 사람이 있나" */
 const FC = { f: '#B8A6FF', o: '#F5A623', i: '#8A8A8A' };
@@ -427,10 +508,17 @@ async function renderTrack() {
   bindTerms();
 }
 /* ------------------------------------------------------------ 종목 페이지 */
-async function renderTicker(sym) {
-  setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const [r, rows, J, A, AL, EV, FL, MT] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/flows.json'), j('out/mtf.json')]);
-  if (!r) { main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1>${esc(sym)}</h1><span class="mut">분석 결과 없음 — 다음 배치 후 생성</span></div>`; return; }
+async function renderTicker(sym, ov = null) {
+  setNav('desk'); if (!ov) main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
+  let [r, rows, J, A, AL, EV, FL, MT] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/flows.json'), j('out/mtf.json')]);
+  if (!r && !ov) {
+    main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1 class="lgrow">${logo(sym, nameOf(sym, J), 30)}${esc(nameOf(sym, J))}</h1></div><div class="mut" style="padding:20px">데이터 받아서 선 긋는 중… (1~2초)</div>`;
+    const b = await lvBundle(sym);
+    if (!b) { main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1>${esc(nameOf(sym, J))}</h1></div><div class="mut" style="padding:20px">데이터를 못 받았어요. 종목 코드를 확인하거나 잠시 뒤 다시 시도해 주세요.</div>`; return; }
+    return renderTicker(sym, b);
+  }
+  const batchR = r;
+  if (ov) { r = ov.r; rows = ov.rows; if (ov.F) FL = { ...(FL || {}), [sym]: ov.F }; if (ov.M) MT = { ...(MT || {}), [sym]: ov.M }; }
   const jd = J?.[sym], a = A?.[sym], k = r.krw, c = r.close, f = v => fmtP(v, k);
   const chg = r.rsi_volume.chg_pct, rv = r.rsi_volume;
   const conf = r.confluence || [];
@@ -498,12 +586,17 @@ async function renderTicker(sym) {
       : [it(C.ma20, '20' + u + '선'), it(C.ok, '가까운 ' + term('지지'), 1), it(C.warn, '가까운 ' + term('저항') + '·' + term('추세선'), 1), it(C.ok, '★받침/천장'), ...(jd?.held ? [it(C.up, term('손절'), 1)] : [])].join('') + (tf === 'd' ? '<span class="mut">· 나머지 선은 "선 8종 전부"</span>' : '')) + note;
   };
   const TFD = { d: { rows, r } };
+  if (ov?.w) TFD.w = ov.w; if (ov?.m) TFD.m = ov.m;
   const redraw = async () => {
     const all = (LS.get('chartMode') || 'key') === 'all', tf = LS.get('chartTf') || 'd';
     if (!TFD[tf]) {
       $('#chart').innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-      const rr = await loadCsv(`${sym}.${tf}`);
-      const ra = tf === 'h' ? r : (await j(`out/${sym}.${tf}.json`));
+      let rr = await loadCsv(`${sym}.${tf}`);
+      let ra = tf === 'h' ? r : (await j(`out/${sym}.${tf}.json`));
+      if ((!rr.length || !ra || tf === 'h') && QURL()) {  // 배치 파일 없거나 1시간봉(항상 최신) → 중계에서 바로
+        const L = await lvChart(sym, tf);
+        if (L?.rows.length) { rr = L.rows; if (tf !== 'h') { try { ra = Engine.analyze(engRows(rr), sym); } catch { } } }
+      }
       TFD[tf] = { rows: rr, r: ra };
     }
     const D = TFD[tf]; const el = $('#chart'); el.innerHTML = '';
@@ -519,6 +612,9 @@ async function renderTicker(sym) {
   document.querySelectorAll('#chartMode button').forEach(b => b.onclick = () => { LS.set('chartMode', b.dataset.m); document.querySelectorAll('#chartMode button').forEach(x => x.classList.toggle('on', x === b)); redraw(); });
   bindTerms(); bindTodo();
   $('#foot').textContent = `${sym} · ${stamp()}`;
+  loadWatchlist().then(wl => { if (!wl.includes(sym)) { const hd = $('.thead'); if (hd && !$('#addWrap')) hd.insertAdjacentHTML('beforeend', `<div id="addWrap" class="addw"><button class="btn" onclick="addToWatch('${esc(sym)}')">＋ 관심 종목에 추가</button><span class="mut" id="addMsg">추가하면 매일 판단·알림·성적표 대상이 돼요</span></div>`); } });
+  if (ov) { const hd = $('.headline'); if (hd) hd.insertAdjacentHTML('afterbegin', `<span class="lvtag">${ov.open ? '장중' : '최신'} 데이터로 다시 계산 · ${ov.at.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}${batchR ? ' · 판단 보드는 종가 기준' : ''}</span>`); }
+  else lvRefresh(sym, r);
 }
 
 /* 기본은 '핵심 선만' — 선 30개 긋는 점액질 차트 금지(워뇨띠). 전부 보기는 토글로 */
