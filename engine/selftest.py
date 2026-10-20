@@ -6,7 +6,7 @@ from lines import analyze
 ROOT = Path(__file__).resolve().parent.parent
 ok = True
 for p in sorted((ROOT / "data").glob("*.csv")):
-    if p.stem.startswith("^"):
+    if p.stem.startswith("^") or p.stem.endswith((".w", ".m", ".h")):  # 주·월·1시간봉은 일봉 점검 대상 아님
         continue
     try:
         r = analyze(str(p))
