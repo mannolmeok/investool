@@ -536,7 +536,7 @@ async function renderScreener() {
   setNav('screener'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
   const [SC, J] = await Promise.all([j('out/screener.json'), j('out/judgement.json')]);
   const head = `<div class="bar"><h1>스크리너</h1><span class="mut" style="font-size:12px">이름은 다 아는데, 번 돈에 비해 덜 오른 종목</span></div>
-    <section class="axes"><div class="ax"><b>① 조 단위</b><span>시총 1조↑ · 하루 30억↑ 거래</span></div><div class="ax"><b>② 싸다</b><span>PER 업종보다 낮음 (가장 먼저)</span></div><div class="ax"><b>③ 실적 신고점</b><span>주가 말고 매출·영업이익이 최고치</span></div><div class="ax"><b>④ 미반영</b><span>이익 증가 &gt; 1년 주가 상승 (필수)</span></div><div class="ax hl"><b>★ 깨어남</b><span>외국인+기관 사기 시작 = 타이밍</span></div></section>`;
+    <section class="axes"><div class="ax"><b>① 잡주 컷</b><span>시총 3천억↑ · 하루 30억↑ 거래</span></div><div class="ax"><b>② 싸다</b><span>PER 업종보다 낮음 (가장 먼저)</span></div><div class="ax"><b>③ 실적 신고점</b><span>주가 말고 매출·영업이익이 최고치</span></div><div class="ax"><b>④ 미반영</b><span>이익 증가 &gt; 1년 주가 상승 (필수)</span></div><div class="ax hl"><b>★ 깨어남</b><span>외국인+기관 사기 시작 = 타이밍</span></div></section>`;
   if (!SC?.rows?.length) { main.innerHTML = head + '<div class="mut" style="padding:12px">첫 스크린은 토요일 아침 자동 실행 (또는 GitHub Actions → screener → Run workflow)</div>'; return; }
   const pctTxt = x => x == null ? '—' : (x >= 0 ? '+' : '') + Math.round(x * 100) + '%';
   const W = x => Math.min(100, Math.abs(x || 0) * 100);  // 100% = 막대 끝
