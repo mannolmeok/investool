@@ -85,7 +85,11 @@ def check(stock_code, corp_code, listed_names=()):
         out["err_audit"] = repr(e)[:80]
     try:
         inv = _json("otrCprInvstmntSttus.json", corp_code=corp_code, bsns_year=str(yr), reprt_code="11011")
-        names = {(x.get("inv_prm") or "").replace("(주)", "").replace("㈜", "").strip() for x in inv}
+        def rt(x):
+            try: return float(str(x.get("trmend_blce_qota_rt", "")).replace(",", ""))
+            except ValueError: return 0.0
+        # 지분율 20% 이상(관계·종속회사)만 '자회사'로 — 그룹사 소량 교차보유는 제외
+        names = {(x.get("inv_prm") or "").replace("(주)", "").replace("㈜", "").strip() for x in inv if rt(x) >= 20}
         ls = sorted(n for n in names if n and n in set(listed_names))
         out["listed_subs"] = ls
         if len(ls) >= 2:
@@ -93,7 +97,7 @@ def check(stock_code, corp_code, listed_names=()):
     except Exception as e:
         out["err_inv"] = repr(e)[:80]
     if out.get("major_pct") is not None and out["major_pct"] < 20:
-        out["flags"].append(f"최대주주 지분 {out['major_pct']:.0f}% (경영권 분쟁·주주환원 변수)")
+        out.setdefault("notes", []).append(f"최대주주 지분 낮음({out['major_pct']:.0f}%) — 경영권 변수")
     return out
 
 
@@ -114,7 +118,7 @@ def enrich(rows, universe_names):
             r["dart"] = d
             r.setdefault("gov_flags", [])
             r["gov_flags"] += [f for f in d["flags"] if f not in r["gov_flags"]]
-            r["gov_notes"] = d.get("notes", []) + ([f"최대주주+특수관계인 {d['major_pct']:.0f}%"] if d.get("major_pct") is not None else [])
+            r["gov_notes"] = d.get("notes", []) + ([f"최대주주+특수관계인 {d['major_pct']:.0f}%"] if d.get("major_pct") is not None and d["major_pct"] >= 20 else [])
         except Exception as e:
             print("dart skip", r["name"], repr(e)[:80])
         time.sleep(0.15)
