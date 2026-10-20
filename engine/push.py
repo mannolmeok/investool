@@ -20,7 +20,7 @@ def load_subs():
     if f.exists():
         try:
             d = json.loads(f.read_text(encoding="utf-8") or "[]")
-            subs += d if isinstance(d, list) else [d]
+            subs += [{k: v for k, v in x.items() if not k.startswith("_")} for x in (d if isinstance(d, list) else [d])]
         except Exception as e:
             print("push_subs.json 읽기 실패:", e)
     url, key = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_KEY")

@@ -1,1 +1,3 @@
-[]
+[
+ {"endpoint":"https://fcm.googleapis.com/fcm/send/e0EYlGYL5RI:APA91bFmiRwSSb722xhVTJUKiyB_v8xLC8kf-a41XaM8m7tCBLwZonGmTelT3VNv6ci1m1m5qRbYW-Nf5b3MzVF_bo-4pZPb6ISZ6NZrv1CjDDfNp3uGufR4wV5GUWTjmbQzqn2t2TgR","expirationTime":null,"keys":{"p256dh":"BKSX4mPTH08F5VnX_WSDSsSREkJ2CDdUQSg1wDDbhv3cR6yxlF0yH-FFkzI5RS9NRBmlO1M8VCT_jp2OpMOLr_Y","auth":"6jXb7-kpUD7KsXyt8lNCoA"},"_device":"승민 폰 (Android)"}
+]
