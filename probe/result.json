@@ -1,178 +1,123 @@
 {
- "researches": [
-  {
-   "id": 96738,
-   "cd": "000270",
-   "nm": "기아",
-   "bnm": "iM증권",
-   "tit": "우수한 본업임에도 믹스 악화가 걸린다",
-   "rcnt": "3867",
-   "wdt": "20261015"
+ "trend60": 60,
+ "trend120": "<HTTPError 400: '400'>",
+ "267250": {
+  "name": "HD현대",
+  "desc": "",
+  "industryCode": "291",
+  "지배": {
+   "202509": 1746.0,
+   "202609": null,
+   "202606": 13311.0,
+   "202506": 1212.0,
+   "202603": 7812.0,
+   "202512": 4477.0
   },
-  {
-   "id": 96604,
-   "cd": "000270",
-   "nm": "기아",
-   "bnm": "유진투자증권",
-   "tit": "3Q26 Preview: 아쉬운 매크로 변수",
-   "rcnt": "3223",
-   "wdt": "20261012"
+  "비지배": {
+   "202509": 8123.0,
+   "202609": null,
+   "202606": 18420.0,
+   "202506": 3667.0,
+   "202603": 12419.0,
+   "202512": 9755.0
   },
-  {
-   "id": 96579,
-   "cd": "000270",
-   "nm": "기아",
-   "bnm": "키움증권",
-   "tit": "하반기 HEV 신차 볼륨 사이클에서 상대적 열위",
-   "rcnt": "3036",
-   "wdt": "20261012"
-  },
-  {
-   "id": 96570,
-   "cd": "000270",
-   "nm": "기아",
-   "bnm": "한화투자증권",
-   "tit": "물량 확대는 증익으로 귀결",
-   "rcnt": "11408",
-   "wdt": "20261008"
-  },
-  {
-   "id": 96338,
-   "cd": "000270",
-   "nm": "기아",
-   "bnm": "신한투자증권",
-   "tit": "피하기 어려운 원가 부담과 경쟁 심화",
-   "rcnt": "8014",
-   "wdt": "20260929"
+  "순이익": {
+   "202509": 9869.0,
+   "202609": 12890.0,
+   "202606": 31731.0,
+   "202506": 4880.0,
+   "202603": 20230.0,
+   "202512": 14232.0
   }
- ],
- "industryCompareInfo": [
-  {
-   "stockType": "domestic",
-   "stockEndType": "stock",
-   "itemCode": "005380",
-   "reutersCode": "005380",
-   "stockName": "현대차",
-   "sosok": "0",
-   "closePrice": "315,500",
-   "compareToPreviousClosePrice": "-10,500",
-   "compareToPreviousPrice": {
-    "code": "5",
-    "text": "하락",
-    "name": "FALLING"
-   },
-   "fluctuationsRatio": "-3.22",
-   "accumulatedTradingVolume": "-",
-   "accumulatedTradingValue": "-",
-   "marketValue": "64,193,678",
-   "nav": "N/A",
-   "threeMonthEarningRate": "N/A",
-   "stockExchangeType": {
-    "code": "KS",
-    "zoneId": "Asia/Seoul",
-    "nationType": "KOR",
-    "delayTime": 0,
-    "startTime": "0900",
-    "endTime": "1530",
-    "closePriceSendTime": "1630",
-    "nameKor": "코스피",
-    "nameEng": "KOSPI",
-    "stockType": "domestic",
-    "nationCode": "KOR",
-    "nationName": "대한민국",
-    "name": "KOSPI"
-   },
-   "endUrl": "https://m.stock.naver.com/domestic/stock/005380",
-   "newPcUrl": "https://stock.naver.com/domestic/stock/005380"
-  },
-  {
-   "stockType": "domestic",
-   "stockEndType": "stock",
-   "itemCode": "003620",
-   "reutersCode": "003620",
-   "stockName": "KG모빌리티",
-   "sosok": "0",
-   "closePrice": "2,590",
-   "compareToPreviousClosePrice": "-30",
-   "compareToPreviousPrice": {
-    "code": "5",
-    "text": "하락",
-    "name": "FALLING"
-   },
-   "fluctuationsRatio": "-1.15",
-   "accumulatedTradingVolume": "-",
-   "accumulatedTradingValue": "-",
-   "marketValue": "524,151",
-   "nav": "N/A",
-   "threeMonthEarningRate": "N/A",
-   "stockExchangeType": {
-    "code": "KS",
-    "zoneId": "Asia/Seoul",
-    "nationType": "KOR",
-    "delayTime": 0,
-    "startTime": "0900",
-    "endTime": "1530",
-    "closePriceSendTime": "1630",
-    "nameKor": "코스피",
-    "nameEng": "KOSPI",
-    "stockType": "domestic",
-    "nationCode": "KOR",
-    "nationName": "대한민국",
-    "name": "KOSPI"
-   },
-   "endUrl": "https://m.stock.naver.com/domestic/stock/003620",
-   "newPcUrl": "https://stock.naver.com/domestic/stock/003620"
-  }
- ],
- "dealTrendInfos": [
-  {
-   "itemCode": "000270",
-   "bizdate": "20261019",
-   "foreignerPureBuyQuant": "-58,953",
-   "foreignerHoldRatio": "39.13%",
-   "organPureBuyQuant": "+304,750",
-   "individualPureBuyQuant": "-245,891",
-   "closePrice": "114,600",
-   "compareToPreviousClosePrice": "4,400",
-   "compareToPreviousPrice": {
-    "code": "2",
-    "text": "상승",
-    "name": "RISING"
-   },
-   "accumulatedTradingVolume": "749,813"
-  },
-  {
-   "itemCode": "000270",
-   "bizdate": "20261016",
-   "foreignerPureBuyQuant": "+123,531",
-   "foreignerHoldRatio": "39.13%",
-   "organPureBuyQuant": "+48,173",
-   "individualPureBuyQuant": "-171,056",
-   "closePrice": "110,900",
-   "compareToPreviousClosePrice": "5,000",
-   "compareToPreviousPrice": {
-    "code": "2",
-    "text": "상승",
-    "name": "RISING"
-   },
-   "accumulatedTradingVolume": "809,549"
-  }
- ],
- "consensusInfo": {
-  "itemCode": "000270",
-  "createDate": "2026-10-19",
-  "recommMean": "4.00",
-  "priceTargetMean": "188,000"
  },
- "chart_try": null,
- "charts": [
-  [
-   "https://api.stock.naver.com/chart/domestic/item/000270/day?startDateTime=202510010000&endDateTime=202610200000",
-   "[{\"localDate\":\"20251001\",\"closePrice\":100600.0,\"openPrice\":100500.0,\"highPrice\":101500.0,\"lowPrice\":100200.0,\"accumulatedTradingVolume\":580310,\"foreignRetentionRate\":39.86},{\"localDate\":\"20251002\",\"closePrice\":104200.0,\"openPrice\":100700.0,\"highPrice\":105000.0,\"lowPrice\":100700.0,\"accumulatedTradingVolume\":1580346,\"foreignRetentionRate\":40.05},{\"localDate\":\"20251010\",\"closePrice\":100600.0,\"openPri"
-  ],
-  [
-   "https://m.stock.naver.com/api/chart/domestic/item/000270/day?periodType=year",
-   "[{\"localDate\":\"20261020\",\"closePrice\":113500.0,\"openPrice\":114200.0,\"highPrice\":116400.0,\"lowPrice\":113400.0,\"accumulatedTradingVolume\":98912,\"foreignRetentionRate\":39.13}]"
-  ]
- ]
+ "000880": {
+  "name": "한화",
+  "desc": "",
+  "industryCode": "276",
+  "지배": {
+   "202509": 3654.0,
+   "202609": null,
+   "202606": 4407.0,
+   "202506": 729.0,
+   "202603": 1449.0,
+   "202512": -1532.0
+  },
+  "비지배": {
+   "202509": 6604.0,
+   "202609": null,
+   "202606": 13804.0,
+   "202506": 1960.0,
+   "202603": 6309.0,
+   "202512": 3846.0
+  },
+  "순이익": {
+   "202509": 10258.0,
+   "202609": null,
+   "202606": 18211.0,
+   "202506": 2689.0,
+   "202603": 7758.0,
+   "202512": 2314.0
+  }
+ },
+ "003550": {
+  "name": "LG",
+  "desc": "",
+  "industryCode": "276",
+  "지배": {
+   "202509": 3153.0,
+   "202609": null,
+   "202606": 4657.0,
+   "202506": 2046.0,
+   "202603": 3398.0,
+   "202512": -3629.0
+  },
+  "비지배": {
+   "202509": 581.0,
+   "202609": null,
+   "202606": 682.0,
+   "202506": 396.0,
+   "202603": 391.0,
+   "202512": 1370.0
+  },
+  "순이익": {
+   "202509": 3734.0,
+   "202609": 3755.0,
+   "202606": 5338.0,
+   "202506": 2442.0,
+   "202603": 3790.0,
+   "202512": -2259.0
+  }
+ },
+ "000270": {
+  "name": "기아",
+  "desc": "",
+  "industryCode": "273",
+  "지배": {
+   "202509": 14248.0,
+   "202609": null,
+   "202606": 23276.0,
+   "202506": 22688.0,
+   "202603": 18314.0,
+   "202512": 14743.0
+  },
+  "비지배": {
+   "202509": -24.0,
+   "202609": null,
+   "202606": 1.0,
+   "202506": -6.0,
+   "202603": -12.0,
+   "202512": -34.0
+  },
+  "순이익": {
+   "202509": 14225.0,
+   "202609": 20584.0,
+   "202606": 23277.0,
+   "202506": 22682.0,
+   "202603": 18302.0,
+   "202512": 14709.0
+  }
+ },
+ "industry_name": "{'stockListSortType': 'INDUSTRY', 'stocks': [{'stockType': 'domestic', 'stockEndType': 'stock', 'itemCode': '000040', 'reutersCode': '000040', 'stockName': 'KR모터스', 'sosok': '0', 'closePrice': '1,289', 'compareToPreviousClosePrice': '297', 'compareToPreviousPrice': {'code': '1', 'text': '상한', 'name'",
+ "/api/stocks/industry": "{'stockListSortType': 'INDUSTRY', 'groups': [{'no': 293, 'name': '컴퓨터와주변기기', 'totalCount': 21, 'changeRate': '0.35', 'riseCount': 5, 'fallCount': 12, 'steadyCount': 4}, {'no': 336, 'name': '다각화된통신서비스', 'totalCount': 3, 'changeRate': '0.24', 'riseCount': 2, 'fallCount': 0, 'steadyCount': 1}, {'no': 275, 'name': '담배', 'totalCount': 1, 'changeRate': '0.05', 'riseCount': 1, 'fallCount': 0, 'steadyCount': 0}, {'no': 296, 'name': '운송인프라', 'totalCount': 8, 'changeRate': '-0.19', 'riseCount': 1, 'fallCount': 6, 'steadyCount': 1}, {'no': 337, 'name': '카드', 'totalCount': 1, 'changeRate': '-0.23', 'riseC",
+ "/api/stock/267250/basic": "{'stockEndType': 'stock', 'itemCode': '267250', 'reutersCode': '267250', 'stockName': 'HD현대', 'itemLogoUrl': 'https://ssl.pstatic.net/imgstock/fn/real/logo/stock/Stock267250.svg', 'itemLogoPngUrl': 'https://ssl.pstatic.net/imgstock/fn/real/logo/png/stock/Stock267250.png', 'sosok': '0', 'closePrice': '150,100', 'compareToPreviousClosePrice': '-9,300', 'compareToPreviousPrice': {'code': '5', 'text': '하락', 'name': 'FALLING'}, 'fluctuationsRatio': '-5.83', 'marketStatus': 'OPEN', 'marketStatusDetailType': 'open', 'localTradedAt': '2026-10-20T10:24:22+09:00', 'tradeStopType': {'code': '1', 'text': "
 }
