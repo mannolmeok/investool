@@ -1,0 +1,27 @@
+name: screener
+on:
+  schedule:
+    - cron: "23 23 * * 5"   # 토 08:23 KST — 주 1회
+  workflow_dispatch:
+    inputs:
+      limit: { description: "테스트용 종목 수 제한(빈칸 = 전체)", required: false, default: "" }
+      watch: { description: "관심 종목에 넣을 상위 개수", required: false, default: "7" }
+permissions: { contents: write }
+concurrency: { group: investool-write, cancel-in-progress: false }
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get install -y fonts-noto-cjk >/dev/null
+      - run: pip install -r requirements.txt
+      - run: python engine/screener.py --watch ${{ inputs.watch || '7' }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
+      - run: python engine/run_daily.py
+      - run: |
+          git config user.name investool-bot; git config user.email bot@investool
+          git add -A data out positions.json watchlist.txt
+          git commit -m "screener: $(date -u +%F)" || exit 0
+          git pull --rebase -X theirs && git push
