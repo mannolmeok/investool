@@ -1,0 +1,29 @@
+name: analyze-one
+run-name: "분석: ${{ inputs.q }}"
+on:
+  workflow_dispatch:
+    inputs:
+      q:
+        description: "종목명 · 코드 · 미국 티커 (예: 한화에어로스페이스 / 005930 / NVDA)"
+        required: true
+      add:
+        description: "관심 종목에 추가"
+        type: boolean
+        default: false
+permissions: { contents: write }
+concurrency: { group: investool-write, cancel-in-progress: false }
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get install -y fonts-noto-cjk >/dev/null
+      - run: pip install -r requirements.txt
+      - run: python engine/analyze_one.py "${{ inputs.q }}" ${{ inputs.add && '--add' || '' }}
+      - run: |
+          git config user.name investool-bot; git config user.email bot@investool
+          git add -A data out positions.json watchlist.txt
+          git commit -m "analyze: ${{ inputs.q }}" || exit 0
+          git pull --rebase -X theirs && git push

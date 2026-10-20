@@ -215,6 +215,7 @@ async function renderDesk() {
   const table = `<div class="tbl"><div class="tr"><span>종목</span><span>종가</span><span>받침 ↔ 천장 (현재 위치)</span><span class="d">아래선까지</span><span class="d">위선까지</span><span class="d">RSI</span><span>상태</span></div>${trs.map(x => `<a class="tr" href="#/t/${encodeURIComponent(x.s)}" title="${esc(x.one)}"><span class="n">${nameOf(x.s, J)}<small>${esc(x.s)}</small></span><span class="pr ${cls(x.chg)}">${fmtP(x.c, x.k)}<small>${sgn(x.chg)}</small></span>${miniBar(x)}<span class="d hd">${dist(x.below, x.c)}</span><span class="d hd">${dist(x.abv, x.c)}</span><span class="d hd ${x.rsi < 30 ? 'ok' : x.rsi > 70 ? 'warn' : 'mut'}">${x.rsi.toFixed(0)}</span><span>${chip(x.jd)}</span></a>`).join('')}</div>`;
   const view = LS.get('deskView') || 'card';
   main.innerHTML = `
+    <form class="find" id="findF" autocomplete="off"><input id="findQ" placeholder="종목 찾기 — 이름·코드·미국 티커 (예: 한화에어로스페이스, NVDA)" enterkeyhint="search"><button class="btn pri">분석</button></form><div id="findMsg" class="find-msg" hidden></div>
     <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span><span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
     ${(() => { const al = (AL?.alerts || []); if (!al.length) return '';
       const pr = { '손절 이탈': 0, '손절 근접': 1, '진입 조건': 2, '추세선 돌파': 3, '하단선 이탈': 4, '합류 받침': 5, 'RSI 과매도': 6, '합류 천장': 7 };
@@ -231,11 +232,44 @@ async function renderDesk() {
     <div class="mkts">${mkt || '<div class="mut" style="padding:8px 12px">시장 지표는 다음 배치 후 표시</div>'}</div>
     ${sectH ? `<div class="sects"><span class="mut">업종 맥락</span>${sectH}</div>` : ''}
     <details class="rules"><summary>규칙 3줄</summary><div class="sent"><div>· 모든 판단은 종가 기준. 장중 흔들림은 무시.</div><div>· 손절선 없이 매수 없음. 반등 확인 전 물타기 금지.</div><div>· 문장은 가능성 표현. 확률 숫자 없음. 반대 근거 1줄 필수.</div></div></details>`;
-  bindTerms();
+  bindTerms(); bindFind(J);
   document.querySelectorAll('.vt button').forEach(b => b.onclick = () => { LS.set('deskView', b.dataset.v); document.querySelectorAll('.vt button').forEach(x => x.classList.toggle('on', x === b)); $('.cards').hidden = b.dataset.v === 'table'; $('#tblv').hidden = b.dataset.v === 'card'; });
   $('#foot').textContent = `읽음 ${stamp()}`;
 }
 
+/* 종목 찾기: 이미 분석된 종목이면 바로 이동, 아니면 GitHub에서 분석 실행(토큰 있으면 원탭, 없으면 실행 페이지로) */
+const REPO = 'mannolmeok/investool';
+function bindFind(J) {
+  const f = $('#findF'); if (!f) return;
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const q = $('#findQ').value.trim(); if (!q) return;
+    const msg = $('#findMsg'); msg.hidden = false;
+    const norm = x => (x || '').toLowerCase().replace(/\s/g, '');
+    const LK = (delete cache['out/lookup.json'], await j('out/lookup.json')) || [];
+    const known = [...Object.values(J || {}).map(x => ({ symbol: x.symbol, name: x.name })), ...LK];
+    const hit = known.find(x => [norm(x.symbol), norm(x.name), norm(x.symbol).slice(0, 6), norm(x.q)].includes(norm(q)));
+    if (hit && await j(`out/${hit.symbol}.json`)) { location.hash = '#/t/' + encodeURIComponent(hit.symbol); return; }
+    const tok = LS.get('ghToken');
+    if (!tok) {
+      msg.innerHTML = `<b>${esc(q)}</b>은(는) 아직 분석 전이에요. <a href="https://github.com/${REPO}/actions/workflows/analyze.yml" target="_blank" rel="noopener">GitHub에서 실행</a> → <b>Run workflow</b> → 칸에 <b>${esc(q)}</b> 입력 → 2~3분 뒤 다시 검색.<br><span class="mut">알림·설정에서 GitHub 토큰을 넣어두면 이 버튼 한 번으로 끝나요.</span>`;
+      return;
+    }
+    msg.innerHTML = `<b>${esc(q)}</b> 분석 시작… (데이터 받기 → 선 긋기 → 사이트 반영까지 2~3분)`;
+    const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/analyze.yml/dispatches`, { method: 'POST', headers: { Authorization: `Bearer ${tok}`, Accept: 'application/vnd.github+json' }, body: JSON.stringify({ ref: 'main', inputs: { q, add: 'false' } }) }).catch(() => null);
+    if (!res || res.status !== 204) { msg.innerHTML = `실행 실패 (${res ? res.status : '네트워크'}) — 토큰 권한(Actions: Read and write)을 확인해 주세요.`; return; }
+    const t0 = Date.now();
+    const tick = async () => {
+      const sec = Math.round((Date.now() - t0) / 1000);
+      try { const r = await fetch('out/lookup.json?_=' + Date.now(), { cache: 'no-store' }); const L = r.ok ? await r.json() : [];
+        const h = L.find(x => norm(x.q) === norm(q)); if (h) { msg.innerHTML = `완료 — ${esc(h.name)} 여는 중`; delete cache[`out/${h.symbol}.json`]; location.hash = '#/t/' + encodeURIComponent(h.symbol); return; } } catch { }
+      if (sec > 420) { msg.innerHTML = '7분이 지나도 결과가 없어요. 종목명을 다시 확인하거나 GitHub Actions 기록을 봐주세요.'; return; }
+      msg.innerHTML = `<b>${esc(q)}</b> 분석 중… ${sec}초 <span class="mut">(이 화면을 열어두면 끝나는 대로 이동)</span>`;
+      setTimeout(tick, 10000);
+    };
+    setTimeout(tick, 15000);
+  };
+}
 /* 엔진 성적표 — 엔진이 한 말이 5일 뒤 맞았나 */
 function rateBar(pct, ref, col) {
   return `<div class="rb"><div class="rb-t"><div class="rb-f" style="width:${pct ?? 0}%;background:${col}"></div>${ref != null ? `<div class="rb-r" style="left:${ref}%" title="더미 ${ref}%"></div>` : ''}</div><b class="mono">${pct != null ? pct + '%' : '—'}</b></div>`;
@@ -387,6 +421,10 @@ async function renderSettings() {
       <div>· 브라우저 지원: <b class="${supported ? 'ok' : 'dn'}">${supported ? '됨' : '안 됨'}</b> · 권한: <b>${perm}</b></div>
       ${ios && !standalone ? '<div class="warn">· 아이폰은 공유 → "홈 화면에 추가" 후 그 아이콘으로 열어야 알림이 옵니다.</div>' : ''}
       <div style="text-indent:0;padding-left:0"><button class="btn pri" id="btnNotif">알림 켜기</button> <span class="mut" id="notifMsg"></span></div><div id="subBox" hidden style="text-indent:0;padding-left:0;margin-top:8px"><textarea id="subTxt" readonly rows="3" style="width:100%;box-sizing:border-box;font:11px var(--mono,monospace);background:var(--nav);color:var(--txt);border:1px solid var(--ctl);border-radius:4px;padding:6px"></textarea><button class="btn" id="btnCopy" style="margin-top:6px">구독 코드 복사</button> <span class="mut" style="font-size:11px">→ Claude에게 붙여넣기 (또는 저장소 push_subs.json 에 추가)</span></div></div></section>
+    <section><header><span>종목 찾기 원탭 실행</span><small>선택 · 이 기기에만 저장</small></header><div class="sent">
+      <div>· GitHub → Settings → Developer settings → <b>Fine-grained tokens</b> → Repository: investool만 → Permissions: <b>Actions: Read and write</b> → 만든 토큰을 아래에 붙여넣기.</div>
+      <div style="text-indent:0;padding-left:0;display:flex;gap:6px;margin-top:6px"><input id="ghTok" type="password" placeholder="github_pat_…" value="${LS.get('ghToken') ? '••••••••' : ''}" style="flex:1;min-width:0;font:12px var(--mono,monospace);background:var(--nav);color:var(--txt);border:1px solid var(--ctl);border-radius:4px;padding:6px"><button class="btn" id="ghSave">저장</button></div>
+      <div class="mut" id="ghMsg">${LS.get('ghToken') ? '저장됨 — 데스크 검색창에서 바로 분석 실행' : '없으면 검색 시 GitHub 실행 페이지로 안내'}</div></div></section>
     <section><header><span>화면</span><small>다크가 기본 · 밝은 곳에선 라이트</small></header><div class="sent"><div style="text-indent:0;padding-left:0"><span class="vt" style="margin:0" id="themeSel">${['dark', 'light', 'system'].map(t => `<button data-t="${t}" class="${(LS.get('theme') || 'dark') === t ? 'on' : ''}">${{ dark: '다크', light: '라이트', system: '기기 설정' }[t]}</button>`).join('')}</span></div></div></section>
     <section><header><span>데이터 상태</span><small>종목별 마지막 종가일</small></header><div class="sent">${Object.values(J || {}).map(x => { const d = x.asof ? Math.round((Date.now() - new Date(x.asof)) / 864e5) : null; return `<div><b class="w">${esc(x.name || x.symbol)}</b> <span class="mono ${d > 4 ? 'warn' : 'mut'}">${x.asof || '—'}${d != null ? ` (${d}일 전)` : ''}</span></div>`; }).join('') || '<div class="mut">—</div>'}<div class="mut">야후 파이낸스 일봉 · 15분 지연 · 장중 봉은 제외 · 국내 봉은 야후 반영이 반나절 늦을 때가 있음</div></div></section>
     <section><header><span>관심 종목</span><small>watchlist.txt</small></header><div class="sent"><div>· 저장소의 <span class="mono">watchlist.txt</span>에 야후 심볼 한 줄 추가 → 다음 배치부터 (코스피 .KS / 코스닥 .KQ)</div></div></section>
@@ -413,6 +451,7 @@ async function renderSettings() {
       reg.showNotification('investool', { body: '알림 테스트 — 이 기기에서 알림이 보이면 OK', icon: 'icons/icon-192.png' });
     } catch (e) { m.textContent = '구독 실패: ' + e.message; }
   };
+  $('#ghSave').onclick = () => { const v = $('#ghTok').value.trim(); if (v && !v.startsWith('••')) { LS.set('ghToken', v); $('#ghMsg').textContent = '저장됨 — 데스크 검색창에서 바로 분석 실행'; } else if (!v) { LS.set('ghToken', ''); $('#ghMsg').textContent = '지웠어요'; } };
   $('#btnCopy').onclick = async () => { const t = $('#subTxt'); try { await navigator.clipboard.writeText(t.value); $('#btnCopy').textContent = '복사됨 ✓'; } catch { t.select(); document.execCommand('copy'); $('#btnCopy').textContent = '복사됨 ✓'; } };
   bindTerms();
 }

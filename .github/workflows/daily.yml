@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency: { group: investool-write, cancel-in-progress: false }
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -32,4 +33,4 @@ jobs:
           git config user.email "bot@investool"
           git add data out
           git commit -m "daily: $(date -u +%F)" || echo "no changes"
-          git push
+          git pull --rebase -X theirs && git push
