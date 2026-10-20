@@ -1,5 +1,12 @@
 [
 {
+"q": "안랩",
+"symbol": "053800.KQ",
+"name": "안랩",
+"asof": "2026-10-20",
+"added": false
+},
+{
 "q": "nvda",
 "symbol": "NVDA",
 "name": "NVDA",
