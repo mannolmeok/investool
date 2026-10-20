@@ -457,15 +457,26 @@ async function renderSettings() {
 }
 async function renderScreener() {
   setNav('screener'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const [syms, J] = await Promise.all([loadWatchlist(), j('out/judgement.json')]);
-  const cand = syms.filter(s => /\.(KQ|KS)$/.test(s) && !['005930.KS', '000660.KS'].includes(s));
-  const items = (await Promise.all(cand.map(async s => ({ s, r: await j(`out/${s}.json`) })))).filter(x => x.r);
-  const row = ({ s, r }) => { const jd = J?.[s], c = r.close, k = r.krw, rv = r.rsi_volume, conf = r.confluence || [];
-    const above = Object.values(r.ma).filter(v => c > v.value).length, n = Object.keys(r.ma).length;
-    return `<a class="scr" href="#/t/${encodeURIComponent(s)}"><b class="w">${nameOf(s, J)}</b><span class="mono ${cls(rv.chg_pct)}">${fmtP(c, k)} ${sgn(rv.chg_pct)}</span><span class="dots">${Object.values(r.ma).map(v => `<i class="${c > v.value ? 'on' : ''}"></i>`).join('')}</span><span class="mono ${rv.rsi < 30 ? 'ok' : rv.rsi > 70 ? 'warn' : 'mut'}">RSI ${rv.rsi.toFixed(0)}</span><span>${conf.length ? `<span class="${conf[0].price < c ? 'ok' : 'warn'}">★${conf[0].price < c ? '받침' : '천장'} ${fmtP(conf[0].price, k)}</span>` : '<span class="mut">—</span>'}</span><span class="dim">${esc(jd?.status || '')}</span></a>`; };
-  main.innerHTML = `<div class="bar"><h1>스크리너</h1><span class="mut">소외 실적주 후보 — 리서치(10/19) 4축 통과 종목의 지금 기술적 상태</span><span class="tag" style="margin-left:auto">P3 미리보기</span></div>
-    <section><header><span>후보 ${items.length}</span><small>이름 · 종가 · 이평 위치 · RSI · 합류 · 판단</small></header><div class="scr-list">${items.map(row).join('')}</div></section>
-    <section><header><span>4축 기준</span><small>B 실적 → C 가격 → A 미주목 → D 촉매</small></header><div class="sent"><div>· B 실적: 영업이익률 15%↑ · 3년 흑자 · 영업이익 증가</div><div>· C 가격: PER 12↓ · PBR 1.5↓ · 52주 하위 40%</div><div>· A 미주목: 분기 리포트 3건↓ · 검색·거래대금 중하위</div><div>· D 촉매: 수주·실적일·밸류업·자사주 중 1개↑</div><div class="mut">재무 자동 스크리닝(pykrx/DART)은 P3에서. 지금은 리서치로 고른 후보의 기술적 상태만 자동.</div></div></section>`;
+  const [SC, J] = await Promise.all([j('out/screener.json'), j('out/judgement.json')]);
+  const head = `<div class="bar"><h1>스크리너</h1><span class="mut" style="font-size:12px">이름은 다 아는데, 번 돈에 비해 덜 오른 종목</span></div>
+    <section class="axes"><div class="ax"><b>① 조 단위</b><span>시총 1조↑ · 하루 30억↑ 거래</span></div><div class="ax"><b>② 싸다</b><span>PER 업종보다 낮음 (가장 먼저)</span></div><div class="ax"><b>③ 실적 신고점</b><span>주가 말고 매출·영업이익이 최고치</span></div><div class="ax"><b>④ 미반영</b><span>이익은 느는데 주가는 덜 오름</span></div><div class="ax hl"><b>★ 깨어남</b><span>외국인+기관 사기 시작 = 타이밍</span></div></section>`;
+  if (!SC?.rows?.length) { main.innerHTML = head + '<div class="mut" style="padding:12px">첫 스크린은 토요일 아침 자동 실행 (또는 GitHub Actions → screener → Run workflow)</div>'; return; }
+  const pctTxt = x => x == null ? '—' : (x >= 0 ? '+' : '') + Math.round(x * 100) + '%';
+  const W = x => Math.min(100, Math.abs(x || 0) * 100);  // 100% = 막대 끝
+  const row = (r, i) => {
+    const g = r.growth, p = r.ret1y;
+    const twin = `<div class="tw"><div class="tw-r"><span class="tw-k">이익</span><div class="tw-t"><div class="tw-f ok" style="width:${W(g)}%"></div></div><b class="mono ok">${pctTxt(g)}</b></div>
+      <div class="tw-r"><span class="tw-k">주가 1년</span><div class="tw-t"><div class="tw-f ${p >= 0 ? 'upbg' : 'dnbg'}" style="width:${W(p)}%"></div></div><b class="mono ${p >= 0 ? 'up' : 'dn'}">${pctTxt(p)}</b></div></div>`;
+    const parts = Object.entries(r.parts).map(([k, v]) => `<span class="pt" title="${k} ${v}"><i style="height:${Math.max(2, Math.round(v * 0.3))}px"></i><em>${k}</em></span>`).join('');
+    const analyzed = J?.[r.symbol];
+    return `<a class="sc2 ${r.awake ? 'awake' : ''}" href="#/t/${encodeURIComponent(r.symbol)}">
+      <div class="sc2-h"><span class="sc2-rk mono">${i + 1}</span><div><b class="w">${esc(r.name)}</b>${r.awake ? ' <span class="chip ok" style="font-size:10px">★ 깨어남</span>' : ''}${analyzed ? ' <span class="chip" style="font-size:10px;color:var(--tag)">관심</span>' : ''}<div class="mut mono" style="font-size:11px">${r.market === 'KOSPI' ? '코스피' : '코스닥'} · 시총 ${r.cap >= 10000 ? (r.cap / 10000).toFixed(1) + '조' : Math.round(r.cap).toLocaleString() + '억'} · PER ${r.per?.toFixed(1)}${r.ind_per ? ` <span class="mut">(업종 ${r.ind_per.toFixed(1)})</span>` : ''}</div></div><div class="sc2-sc"><b class="mono">${Math.round(r.score)}</b><small>점</small></div></div>
+      <div class="sc2-b">${twin}<div class="pts">${parts}</div></div>
+      <div class="sc2-w">${r.why.slice(1).map(x => `<span>${esc(x)}</span>`).join('')}</div></a>`;
+  };
+  main.innerHTML = head + `<div class="mut mono" style="font-size:11px">${SC.asof} · 대상 ${SC.universe}종목 → ①② 통과 ${SC.passed} → 상위 ${SC.rows.length}</div>
+    <div class="sc2-l">${SC.rows.map(row).join('')}</div>
+    <section><header><span>읽는 법</span></header><div class="sent"><div>· <b class="ok">이익</b> 막대가 길고 <b>주가</b> 막대가 짧을수록 "번 만큼 안 오른" 종목.</div><div>· 오른쪽 작은 기둥 4개 = 점수 구성(싸다 30 · 신고점 25 · 미반영 25 · 성장 20). 기둥이 높을수록 그 항목이 강함.</div><div>· <b class="ok">★ 깨어남</b> = 최근 20일·5일 모두 외국인+기관 순매수. "내 뒤에 사줄 사람"이 들어오기 시작한 신호. ★ 상위 7개는 매주 관심 종목에 자동으로 들어가 선 분석·알림 대상이 돼요.</div><div>· 기준 출처: 워뇨띠 Q&A — "저평가를 먼저, 그다음 차트" · "주가가 아니라 매출·영업이익이 신고점을 돌파하는 종목" · "몇 년 안에 주목받을 애들" · 평균 90일 보유.</div><div class="mut">· 이익 = 추정 EPS 증가율(컨센서스, 틀릴 수 있음). 지분구조 난해·분할상장 남발·실적 이상은 자동으로 못 걸러요 — 직접 확인. 매수 추천이 아니라 볼 종목 목록이에요.</div></div></section>`;
 }
 async function renderJournal() {
   setNav('journal'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';

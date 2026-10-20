@@ -61,6 +61,11 @@ def score_entry(e: dict, df: pd.DataFrame) -> dict:
     res["ret1"] = round((after["close"].iloc[0] / c0 - 1) * 100, 2)
     if n >= H:
         res["ret5"] = round((after["close"].iloc[-1] / c0 - 1) * 100, 2)
+    # 워뇨띠식 보유 기간(평균 90일 ≈ 60거래일)까지 길게도 본다
+    longer = df[df["date"] > pd.Timestamp(e["asof"])]
+    for d in (20, 60):
+        if len(longer) >= d:
+            res[f"ret{d}"] = round((longer["close"].iloc[d - 1] / c0 - 1) * 100, 2)
     out = []
     for p in e["preds"]:
         q = dict(p); px = p["price"]
