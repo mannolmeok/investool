@@ -72,7 +72,7 @@ async function t(url) { try { const res = await fetch(url, { cache: 'no-store' }
 async function loadWatchlist() { return (await t('watchlist.txt')).split('\n').map(s => s.trim()).filter(s => s && !s.startsWith('#')); }
 async function loadCsv(sym) {
   const txt = await t(`data/${sym}.csv`); if (!txt) return [];
-  return txt.trim().split('\n').slice(1).map(l => { const [d, o, h, lo, c, v] = l.split(','); return { time: d, open: +o, high: +h, low: +lo, close: +c, volume: +v }; });
+  return txt.trim().split('\n').slice(1).map(l => { const [d, o, h, lo, c, v] = l.split(','); return { time: /^\d{9,}$/.test(d) ? +d + 9 * 3600 : d, open: +o, high: +h, low: +lo, close: +c, volume: +v }; });
 }
 const sma = (rows, w) => rows.map((r, i) => i < w - 1 ? null : { time: r.time, value: rows.slice(i - w + 1, i + 1).reduce((a, b) => a + b.close, 0) / w }).filter(Boolean);
 const NAMES = { 'INFQ': '인플렉션', '005930.KS': '삼성전자', '000660.KS': 'SK하이닉스', '013030.KQ': '하이록코리아', '054950.KQ': '제이브이엠', '236200.KQ': '슈프리마', '036800.KQ': '나이스정보통신', '200670.KQ': '휴메딕스', '015230.KS': '대창단조', '044960.KQ': '이글벳', '^KS11': '코스피', '^KQ11': '코스닥', '^GSPC': 'S&P 500', '^VIX': 'VIX', 'SOXX': '반도체 ETF', 'IONQ': '아이온큐', 'RGTI': '리게티', 'QBTS': '디웨이브' };
@@ -250,6 +250,26 @@ async function renderDesk() {
   $('#foot').textContent = `읽음 ${stamp()}`;
 }
 
+/* 큰 그림 — 월봉·주봉·일봉을 한 줄로 */
+function bigPicture(M, r) {
+  if (!M || (!M.w && !M.m)) return '';
+  const k = r.krw, f = v => v == null ? '—' : fmtP(v, k);
+  const day = { trend: (() => { const ma = Object.values(r.ma || {}); const a = ma.filter(v => r.close > v.value).length; return !ma.length ? '—' : a === 0 ? '하락 추세' : a === ma.length ? '상승 추세' : '횡보·전환 구간'; })(),
+    above: Object.values(r.ma || {}).filter(v => r.close > v.value).length, n_ma: Object.keys(r.ma || {}).length, rsi: r.rsi_volume?.rsi,
+    sup: [...(r.levels || []).map(l => l.price), ...(r.confluence || []).map(g => g.price)].filter(p => p < r.close).sort((a, b) => b - a)[0],
+    res: [...(r.levels || []).map(l => l.price), ...(r.confluence || []).map(g => g.price)].filter(p => p >= r.close).sort((a, b) => a - b)[0] };
+  const tone = t => t === '상승 추세' ? 'up' : t === '하락 추세' ? 'dn' : 'warn';
+  const col = (name, x, hint) => !x ? `<div class="bp-c off"><div class="bp-h">${name}</div><div class="mut" style="font-size:11px">데이터 부족</div></div>` :
+    `<div class="bp-c"><div class="bp-h">${name}<small>${hint}</small></div><div class="bp-t ${tone(x.trend)}">${x.trend}</div>
+      <div class="bp-dots">${Array.from({ length: x.n_ma }, (_, i) => `<i class="${i < x.above ? 'on' : ''}"></i>`).join('')}<span>이평 ${x.above}/${x.n_ma} 위</span></div>
+      <div class="bp-r"><span>RSI</span><b class="mono ${x.rsi < 30 ? 'ok' : x.rsi > 70 ? 'warn' : ''}">${x.rsi != null ? x.rsi.toFixed(0) : '—'}</b></div>
+      <div class="bp-r"><span>아래 받침</span><b class="mono ok">${f(x.sup)}</b></div><div class="bp-r"><span>위 천장</span><b class="mono warn">${f(x.res)}</b></div></div>`;
+  const strong = (M.strong || []).map(x => `<div class="bp-s">★ ${x.side} <b class="mono">${f(x.price)}</b> — 일봉 선에 <b>${x.with.map(esc).join(' · ')}</b>까지 겹침 → <b class="ok">더 강한 자리</b></div>`).join('');
+  const near = (M.near || []).slice(0, 4).map(n => `<span class="bp-n"><b>${esc(n.label)}</b> <span class="mono">${f(n.price)}</span> <span class="mono ${n.pct >= 0 ? 'warn' : 'ok'}">${n.pct >= 0 ? '+' : ''}${n.pct.toFixed(1)}%</span></span>`).join('');
+  return `<section class="bp"><header><span>큰 그림 · 월봉 → 주봉 → 일봉</span><small>큰 봉일수록 보는 사람이 많아요</small></header>
+    <div class="bp-g">${col('월봉', M.m, '몇 년')}${col('주봉', M.w, '몇 달')}${col('일봉', day, '판단 기준')}</div>
+    ${strong}${near ? `<div class="bp-nl"><span class="mut">지금 가격 ±3% 안의 큰 봉 선</span>${near}</div>` : ''}</section>`;
+}
 /* 실시간 시세 (Cloudflare Worker 중계) — 보는 용도. 판단·손절은 계속 종가 기준 */
 let LIVE = {}, liveTimer = null, liveSyms = [];
 function liveStart() {
@@ -404,7 +424,7 @@ async function renderTrack() {
 /* ------------------------------------------------------------ 종목 페이지 */
 async function renderTicker(sym) {
   setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const [r, rows, J, A, AL, EV, FL] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/flows.json')]);
+  const [r, rows, J, A, AL, EV, FL, MT] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/flows.json'), j('out/mtf.json')]);
   if (!r) { main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1>${esc(sym)}</h1><span class="mut">분석 결과 없음 — 다음 배치 후 생성</span></div>`; return; }
   const jd = J?.[sym], a = A?.[sym], k = r.krw, c = r.close, f = v => fmtP(v, k);
   const chg = r.rsi_volume.chg_pct, rv = r.rsi_volume;
@@ -451,8 +471,9 @@ async function renderTicker(sym) {
       if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(LS.get(key) || '{}'); } catch {}
       return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
     ${sig}
+    ${bigPicture(MT?.[sym], r)}
     <div class="grid2">
-      <section><header><span>일봉</span><span class="vt" id="chartMode" style="margin-left:auto">${[["key", "핵심 선만"], ["all", "선 8종 전부"]].map(([m, t]) => `<button data-m="${m}" class="${(LS.get('chartMode') || 'key') === m ? 'on' : ''}">${t}</button>`).join('')}</span></header><div id="chart"></div>
+      <section><header><span class="vt" id="chartTf" style="margin:0">${[["h", "1시간"], ["d", "일"], ["w", "주"], ["m", "월"]].map(([v, t]) => `<button data-tf="${v}" class="${(LS.get('chartTf') || 'd') === v ? 'on' : ''}">${t}</button>`).join('')}</span><span class="vt" id="chartMode" style="margin-left:auto">${[["key", "핵심 선만"], ["all", "선 8종 전부"]].map(([m, t]) => `<button data-m="${m}" class="${(LS.get('chartMode') || 'key') === m ? 'on' : ''}">${t}</button>`).join('')}</span></header><div id="chart"></div>
         <div class="clegend" id="clegend"></div></section>
       <section><header><span>선 사다리</span><small>차트 구간의 선 · 현재가 기준</small></header>${ladder(r, rows)}</section>
     </div>
@@ -464,12 +485,27 @@ async function renderTicker(sym) {
     <details class="more"><summary>자세한 해석 ${r.sentences.length}줄 · 정적 이미지</summary>
       <div class="sent">${r.sentences.map(s => `<div>· ${esc(s)}</div>`).join('')}</div>
       <img src="out/${encodeURIComponent(sym)}.png" style="width:100%;display:block;margin-top:8px" alt="배치가 만든 차트"></details>`;
-  const legendHTML = all => {
-    const it = (c, t, dash) => `<span><i ${dash ? `class="dash" style="border-color:${c}"` : `style="background:${c}"`}></i>${t}</span>`;
-    return all ? [it(C.ma20, '20일'), it(C.ma60, '60일'), it(C.ma120, '120일'), it(C.ma200, '200일'), it(C.ok, term('지지'), 1), it(C.warn, term('저항') + '·' + term('추세선'), 1), it(C.tag, term('피보'), 1), it(C.ok, '★' + term('합류'))].join('')
-      : [it(C.ma20, '20일선'), it(C.ok, '가까운 ' + term('지지'), 1), it(C.warn, '가까운 ' + term('저항') + '·' + term('추세선'), 1), it(C.ok, '★받침/천장'), ...(jd?.held ? [it(C.up, term('손절'), 1)] : [])].join('') + '<span class="mut">· 나머지 선은 "선 8종 전부"</span>';
+  const UNIT = { h: '시간', d: '일', w: '주', m: '월' };
+  const legendHTML = (all, tf) => {
+    const u = UNIT[tf], it = (c, t, dash) => `<span><i ${dash ? `class="dash" style="border-color:${c}"` : `style="background:${c}"`}></i>${t}</span>`;
+    const note = tf === 'h' ? '<span class="mut">· 선은 일봉 기준 (1시간봉 위에 겹쳐 그림)</span>' : tf !== 'd' ? `<span class="mut">· ${u}봉으로 다시 그은 선 · 마지막 봉은 진행 중</span>` : '';
+    return (all ? [it(C.ma20, '20' + u), it(C.ma60, '60' + u), it(C.ma120, '120' + u), it(C.ma200, '200' + u), it(C.ok, term('지지'), 1), it(C.warn, term('저항') + '·' + term('추세선'), 1), it(C.tag, term('피보'), 1), it(C.ok, '★' + term('합류'))].join('')
+      : [it(C.ma20, '20' + u + '선'), it(C.ok, '가까운 ' + term('지지'), 1), it(C.warn, '가까운 ' + term('저항') + '·' + term('추세선'), 1), it(C.ok, '★받침/천장'), ...(jd?.held ? [it(C.up, term('손절'), 1)] : [])].join('') + (tf === 'd' ? '<span class="mut">· 나머지 선은 "선 8종 전부"</span>' : '')) + note;
   };
-  const redraw = () => { const all = (LS.get('chartMode') || 'key') === 'all'; const el = $('#chart'); el.innerHTML = ''; drawChart(rows, r, all, jd); $('#clegend').innerHTML = legendHTML(all); bindTerms(); };
+  const TFD = { d: { rows, r } };
+  const redraw = async () => {
+    const all = (LS.get('chartMode') || 'key') === 'all', tf = LS.get('chartTf') || 'd';
+    if (!TFD[tf]) {
+      $('#chart').innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
+      const rr = await loadCsv(`${sym}.${tf}`);
+      const ra = tf === 'h' ? r : (await j(`out/${sym}.${tf}.json`));
+      TFD[tf] = { rows: rr, r: ra };
+    }
+    const D = TFD[tf]; const el = $('#chart'); el.innerHTML = '';
+    if (!D.rows.length || !D.r) { el.innerHTML = `<div class="mut" style="padding:20px">${UNIT[tf]}봉 데이터는 다음 배치(15:43 / 05:13) 후에 생겨요.</div>`; $('#clegend').innerHTML = ''; return; }
+    drawChart(D.rows, { ...D.r, close: tf === 'h' ? r.close : D.r.close }, all, jd, tf); $('#clegend').innerHTML = legendHTML(all, tf); bindTerms();
+  };
+  document.querySelectorAll('#chartTf button').forEach(b => b.onclick = () => { LS.set('chartTf', b.dataset.tf); document.querySelectorAll('#chartTf button').forEach(x => x.classList.toggle('on', x === b)); redraw(); });
   redraw();
   document.querySelectorAll('#chartMode button').forEach(b => b.onclick = () => { LS.set('chartMode', b.dataset.m); document.querySelectorAll('#chartMode button').forEach(x => x.classList.toggle('on', x === b)); redraw(); });
   bindTerms(); bindTodo();
@@ -477,12 +513,12 @@ async function renderTicker(sym) {
 }
 
 /* 기본은 '핵심 선만' — 선 30개 긋는 점액질 차트 금지(워뇨띠). 전부 보기는 토글로 */
-function drawChart(rows, r, all = false, jd = null) {
+function drawChart(rows, r, all = false, jd = null, tf = 'd') {
   const el = $('#chart'); if (!el || !window.LightweightCharts || !rows.length) return; const k = r.krw;
   const chart = LightweightCharts.createChart(el, {
     layout: { background: { color: C.bg }, textColor: C.mut, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 },
     grid: { vertLines: { color: C.line }, horzLines: { color: C.line } },
-    rightPriceScale: { borderColor: C.line, scaleMargins: { top: 0.08, bottom: 0.22 } }, timeScale: { borderColor: C.line, rightOffset: 8 },
+    rightPriceScale: { borderColor: C.line, scaleMargins: { top: 0.08, bottom: 0.22 } }, timeScale: { borderColor: C.line, rightOffset: 8, timeVisible: tf === 'h', secondsVisible: false },
     handleScroll: { vertTouchDrag: false }, handleScale: { axisPressedMouseMove: { time: true, price: false } }, // 모바일: 세로 드래그는 페이지 스크롤
     crosshair: { mode: 0 }, localization: { locale: 'ko-KR', priceFormatter: v => fmtP(v, k) },
   });
@@ -519,7 +555,7 @@ function drawChart(rows, r, all = false, jd = null) {
     chart.addLineSeries({ color, lineWidth: 2, priceLineVisible: false, lastValueVisible: !!title, crosshairMarkerVisible: false, title }).setData(pts);
   };
   tl(r.trend_upper, C.warn, '추세'); if (all) tl(r.trend_lower, C.warn, '');
-  chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, rows.length - 80), to: rows.length + 6 });
+  chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, rows.length - ({ h: 120, d: 80, w: 104, m: 120 }[tf] || 80)), to: rows.length + 6 });
   new ResizeObserver(() => chart.applyOptions({ width: el.clientWidth, height: el.clientHeight })).observe(el);
 }
 

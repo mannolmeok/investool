@@ -30,6 +30,11 @@ def main():
         md += ["- " + x for x in r["sentences"]]
         md.append("")
     try:
+        from mtf import main as mtf_main
+        mtf_main()
+    except Exception as e:
+        print('mtf fail', e)
+    try:
         from flows import main as flows_main
         flows_main()
     except Exception as e:  # 네이버 장애가 배치를 막지 않게

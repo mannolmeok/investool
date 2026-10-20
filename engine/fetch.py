@@ -56,6 +56,35 @@ def fetch(sym: str) -> int:
     return len(rows) - 1
 
 
+TF = {"w": ("1wk", "5y"), "m": ("1mo", "max"), "h": ("60m", "60d")}
+
+
+def fetch_tf(sym: str, tf: str) -> int:
+    """주봉(w)·월봉(m)·1시간봉(h) → data/<sym>.<tf>.csv  (진행 중인 봉 포함 — 차트·큰 그림용, 판단은 일봉 종가)"""
+    interval, rng = TF[tf]
+    u = f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(sym)}?interval={interval}&range={rng}"
+    with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=30) as r:
+        res = json.load(r)["chart"]["result"][0]
+    q, ts = res["indicators"]["quote"][0], res.get("timestamp") or []
+    krw = sym.endswith((".KS", ".KQ"))
+    f = (lambda v: f"{round(v):d}") if krw else (lambda v: f"{v:.2f}")
+    rows, seen = ["date,open,high,low,close,volume"], set()
+    for i, t in enumerate(ts):
+        if q["close"][i] is None or q["open"][i] is None:
+            continue
+        if tf == "h":
+            d = str(int(t))  # 유닉스 초 (차트에서 시간축)
+        else:
+            d = datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%d")
+        if d in seen:
+            rows[-1] = f"{d},{f(q['open'][i])},{f(q['high'][i])},{f(q['low'][i])},{f(q['close'][i])},{int(q['volume'][i] or 0)}"; continue
+        seen.add(d)
+        rows.append(f"{d},{f(q['open'][i])},{f(q['high'][i])},{f(q['low'][i])},{f(q['close'][i])},{int(q['volume'][i] or 0)}")
+    if len(rows) > 3:
+        (DATA / f"{sym}.{tf}.csv").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    return len(rows) - 1
+
+
 if __name__ == "__main__":
     def read_list(name):
         f = ROOT / name
@@ -68,3 +97,11 @@ if __name__ == "__main__":
         except Exception as e:  # 한 종목 실패가 전체를 막지 않게
             print(f"{s}: FAIL {e}")
         time.sleep(1)
+    # 관심 종목만: 주봉·월봉·1시간봉
+    for s in (sys.argv[1:] or read_list("watchlist.txt")):
+        for tf in TF:
+            try:
+                print(f"{s}.{tf}: {fetch_tf(s, tf)} bars")
+            except Exception as e:
+                print(f"{s}.{tf}: FAIL {e}")
+            time.sleep(0.5)
