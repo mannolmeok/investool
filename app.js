@@ -273,7 +273,7 @@ function bindFind(J) {
 }
 /* 수급 — "내 뒤에 사줄 사람이 있나" */
 const FC = { f: '#B8A6FF', o: '#F5A623', i: '#8A8A8A' };
-const eok = v => v == null ? '—' : (v >= 0 ? '+' : '−') + Math.abs(v).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '억';
+const eok = v => v == null ? '—' : (v >= 0 ? '+' : '−') + (Math.abs(v) >= 10000 ? (Math.abs(v) / 10000).toFixed(Math.abs(v) >= 100000 ? 0 : 1) + '조' : Math.abs(v).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '억');
 function flowChart(F) {
   const mob = innerWidth < 700, W = mob ? 400 : Math.max(680, Math.min(1260, innerWidth - 200)), H = mob ? 250 : 260, P = { l: 6, r: mob ? 84 : 92, t: 12, b: 58 }, n = F.daily.length, fz = mob ? 12 : 12;
   const all = [...F.cum.f, ...F.cum.o, ...F.cum.i, 0];
