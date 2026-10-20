@@ -1,0 +1,10 @@
+{
+"asof": "2026-10-20 09:48",
+"universe": 80,
+"passed": 0,
+"rule": {
+"min_cap_eok": 5000,
+"min_tv_eok": 30
+},
+"rows": []
+}
