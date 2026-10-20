@@ -275,7 +275,7 @@ function bindFind(J) {
 const FC = { f: '#B8A6FF', o: '#F5A623', i: '#8A8A8A' };
 const eok = v => v == null ? '—' : (v >= 0 ? '+' : '−') + Math.abs(v).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '억';
 function flowChart(F) {
-  const W = 640, H = 200, P = { l: 8, r: 56, t: 10, b: 54 }, n = F.daily.length;
+  const mob = innerWidth < 700, W = mob ? 400 : Math.max(680, Math.min(1260, innerWidth - 200)), H = mob ? 250 : 260, P = { l: 6, r: mob ? 84 : 92, t: 12, b: 58 }, n = F.daily.length, fz = mob ? 12 : 12;
   const all = [...F.cum.f, ...F.cum.o, ...F.cum.i, 0];
   const lo = Math.min(...all), hi = Math.max(...all), span = (hi - lo) || 1;
   const x = i => P.l + i * (W - P.l - P.r) / Math.max(1, n - 1);
@@ -283,19 +283,19 @@ function flowChart(F) {
   const path = arr => arr.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
   const bars = F.daily.map(d => d.f + d.o), bm = Math.max(1, ...bars.map(Math.abs)), by = H - 22, bh = 18;
   const bw = Math.max(2, (W - P.l - P.r) / n - 2);
-  const lab = (k, t) => { const v = F.cum[k][n - 1]; return `<text x="${W - P.r + 6}" y="${y(v) + 4}" font-size="11" fill="${FC[k]}">${t} ${eok(v)}</text>`; };
-  return `<svg viewBox="0 0 ${W} ${H}" class="fchart" preserveAspectRatio="none">
+  const lab = (k, t) => { const v = F.cum[k][n - 1]; return `<text x="${W - P.r + 6}" y="${y(v) + 4}" font-size="${fz}" font-weight="600" fill="${FC[k]}">${t} ${eok(v)}</text>`; };
+  return `<svg viewBox="0 0 ${W} ${H}" class="fchart">
     <line x1="${P.l}" x2="${W - P.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--ctl)" stroke-dasharray="3 3"/>
-    <text x="${P.l}" y="${y(0) - 4}" font-size="10" fill="var(--mut)">0 (60일 전 기준)</text>
+    <text x="${P.l}" y="${y(0) - 4}" font-size="${fz - 1}" fill="var(--mut)">0 = 60일 전</text>
     <path d="${path(F.cum.i)}" fill="none" stroke="${FC.i}" stroke-width="1.5" opacity=".8"/>
     <path d="${path(F.cum.o)}" fill="none" stroke="${FC.o}" stroke-width="2"/>
     <path d="${path(F.cum.f)}" fill="none" stroke="${FC.f}" stroke-width="2.4"/>
     ${lab('f', '외')}${lab('o', '기')}${lab('i', '개')}
     <line x1="${P.l}" x2="${W - P.r}" y1="${by}" y2="${by}" stroke="var(--line)"/>
     ${bars.map((v, i) => { const h = Math.abs(v) / bm * bh; return `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${(v >= 0 ? by - h : by).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.5, h).toFixed(1)}" fill="${v >= 0 ? 'var(--up)' : 'var(--dn)'}" opacity=".75"/>`; }).join('')}
-    <text x="${P.l}" y="${H - 2}" font-size="10" fill="var(--mut)">${F.daily[0].d.slice(4, 6)}/${F.daily[0].d.slice(6)}</text>
-    <text x="${W - P.r}" y="${H - 2}" font-size="10" fill="var(--mut)" text-anchor="end">${F.asof.slice(4, 6)}/${F.asof.slice(6)}</text>
-    <text x="${W - P.r + 6}" y="${by + 4}" font-size="10" fill="var(--mut)">외+기 일별</text>
+    <text x="${P.l}" y="${H - 2}" font-size="${fz - 1}" fill="var(--mut)">${F.daily[0].d.slice(4, 6)}/${F.daily[0].d.slice(6)}</text>
+    <text x="${W - P.r}" y="${H - 2}" font-size="${fz - 1}" fill="var(--mut)" text-anchor="end">${F.asof.slice(4, 6)}/${F.asof.slice(6)}</text>
+    <text x="${W - P.r + 6}" y="${by + 4}" font-size="${fz - 1}" fill="var(--mut)">외+기 하루</text>
   </svg>`;
 }
 function flowSection(F) {
