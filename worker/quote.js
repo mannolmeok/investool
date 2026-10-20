@@ -37,7 +37,7 @@ async function chart(sym, tf) {
   const krw = /\.(KS|KQ)$/.test(sym), rd = v => krw ? Math.round(v) : Math.round(v * 100) / 100;
   const day = t => new Date((t + (krw ? 9 : -4) * 3600) * 1000).toISOString().slice(0, 10);  // 거래소 현지 날짜
   let rows = [];
-  ts.forEach((t, i) => { if (q.close[i] == null || q.open[i] == null) return; rows.push([tf === 'h' ? t : day(t), rd(q.open[i]), rd(q.high[i]), rd(q.low[i]), rd(q.close[i]), q.volume[i] || 0]); });
+  ts.forEach((t, i) => { if (q.close[i] == null || q.open[i] == null || !(q.close[i] > 0)) return; for (const k of ['open', 'high', 'low']) if (!(q[k][i] > 0)) q[k][i] = q.close[i]; rows.push([tf === 'h' ? t : day(t), rd(q.open[i]), rd(q.high[i]), rd(q.low[i]), rd(q.close[i]), q.volume[i] || 0]); });
   if (tf !== 'h') { const m = new Map(); rows.forEach(r => m.set(r[0], r)); rows = [...m.values()]; }  // 같은 날 중복 제거(마지막 값)
   if (tf === 'w' || tf === 'm') {  // 신규 상장 종목은 야후가 일봉을 주는 경우 → 직접 묶기
     const B = new Map();

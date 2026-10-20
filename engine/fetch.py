@@ -70,8 +70,12 @@ def fetch_tf(sym: str, tf: str) -> int:
     f = (lambda v: f"{round(v):d}") if krw else (lambda v: f"{v:.2f}")
     rows, seen = ["date,open,high,low,close,volume"], set()
     for i, t in enumerate(ts):
-        if q["close"][i] is None or q["open"][i] is None:
+        if q["close"][i] is None or q["open"][i] is None or not q["close"][i] or q["close"][i] <= 0:
             continue
+        # 야후가 진행 중인 봉에 시가·고가·저가 0을 보내는 경우 → 종가로 메움
+        for kk in ("open", "high", "low"):
+            if not q[kk][i] or q[kk][i] <= 0:
+                q[kk][i] = q["close"][i]
         if tf == "h":
             d = str(int(t))  # 유닉스 초 (차트에서 시간축)
         else:
