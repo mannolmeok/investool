@@ -1,18 +1,12 @@
-import json, sys
+import json, sys, os
 sys.path.insert(0, "engine")
-import naver
-R = {}
-for n in (60, 120):
-    try: R[f"trend{n}"] = len(naver.get(f"/api/stock/000270/trend?pageSize={n}"))
-    except Exception as e: R[f"trend{n}"] = repr(e)[:100]
-for code in ("267250", "000880", "003550", "000270"):  # HD현대, 한화, LG, 기아
-    i = naver.integration(code)["raw"]
-    q = naver.finance(code, "quarter")
-    R[code] = {"name": i.get("stockName"), "desc": (i.get("description") or "")[:300], "industryCode": i.get("industryCode"),
-               "지배": q["rows"].get("지배주주순이익"), "비지배": q["rows"].get("비지배주주순이익"), "순이익": q["rows"].get("당기순이익")}
-try: R["industry_name"] = str(naver.get("/api/stocks/industry/273?page=1&pageSize=1"))[:300]
-except Exception as e: R["industry_name"] = repr(e)
-for u in ["/api/stocks/industry", "/api/stock/267250/basic"]:
-    try: R[u] = str(naver.get(u))[:600]
-    except Exception as e: R[u] = repr(e)[:100]
+import dart
+R = {"key_set": bool(dart.KEY), "key_len": len(dart.KEY)}
+try:
+    cc = dart.corp_codes(); R["corp_codes"] = len(cc)
+    names = ["한화오션", "한화시스템", "한화에어로스페이스", "HD현대중공업", "HD한국조선해양", "HD현대일렉트릭", "LS ELECTRIC", "LS마린솔루션"]
+    for code, nm in [("267250", "HD현대"), ("000880", "한화"), ("051910", "LG화학"), ("214450", "파마리서치"), ("039490", "키움증권")]:
+        R[nm] = dart.check(code, cc[code], names)
+except Exception as e:
+    R["err"] = repr(e)[:300]
 open("probe/result.json", "w").write(json.dumps(R, ensure_ascii=False, indent=1))

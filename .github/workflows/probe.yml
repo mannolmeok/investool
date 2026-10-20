@@ -10,6 +10,7 @@ jobs:
         with: { python-version: "3.12" }
       - run: pip install pykrx pandas
       - run: python probe/probe.py
+        env: { DART_API_KEY: '${{ secrets.DART_API_KEY }}' }
       - run: |
           git config user.name investool-bot; git config user.email bot@investool
           git add probe/result.json; git commit -m "probe result" || true; git push
