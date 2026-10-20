@@ -154,6 +154,9 @@ def main():
     C = [r for r in rows if r["tv20"] >= MIN_TV and r["profitable"] and r["per"] and 0 < r["per"] < 60
          and (r["g_fwd"] or 0) > 0]
     log(f"gate ①② 통과 {len(C)} / {len(rows)}")
+    why = {"거래대금": sum(r["tv20"] < MIN_TV for r in rows), "적자분기": sum(not r["profitable"] for r in rows),
+           "PER": sum(not (r["per"] and 0 < r["per"] < 60) for r in rows), "추정EPS↓": sum(not ((r["g_fwd"] or 0) > 0) for r in rows)}
+    log("탈락 사유(중복 포함):", why)
     # 1년 수익률 (야후) — 통과 종목만
     for r in C:
         sym = naver.yahoo_symbol(r["code"], r["market"]); r["symbol"] = sym
@@ -180,7 +183,7 @@ def main():
         r["why"] = reasons(r)
     C.sort(key=lambda r: r["score"], reverse=True)
     top = C[:40]
-    res = {"asof": datetime.now(KST).strftime("%Y-%m-%d %H:%M"), "universe": len(rows), "passed": len(C),
+    res = {"asof": datetime.now(KST).strftime("%Y-%m-%d %H:%M"), "universe": len(rows), "passed": len(C), "dropped": why,
            "rule": {"min_cap_eok": MIN_CAP, "min_tv_eok": MIN_TV}, "rows": top}
     (ROOT / "out" / "screener.json").write_text(json.dumps(res, ensure_ascii=False, indent=0, default=float), encoding="utf-8")
     log(f"top {len(top)}")

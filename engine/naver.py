@@ -20,11 +20,9 @@ def num(s):
     """'1,234' / '+1,234' / '-' / None → float | None"""
     if s is None:
         return None
-    s = str(s).replace(",", "").replace("%", "").replace("+", "").strip()
-    try:
-        return float(s)
-    except ValueError:
-        return None
+    import re
+    m = re.search(r"-?\d+(?:\.\d+)?", str(s).replace(",", ""))  # '6.29배' '18,004원' '+1,234' '39.13%'
+    return float(m.group()) if m else None
 
 
 def search(q):
