@@ -1,5 +1,17 @@
 /* investool PWA v2 — 시각 우선. out/*.json + data/*.csv 만 읽는다 (서버 없음) */
 const $ = (s, el = document) => el.querySelector(s);
+/* 종목 로고 (토스처럼) — logos/index.json 에 있으면 이미지, 없으면 이름 첫 글자 배지 */
+let LOGOS = {};
+fetch('logos/index.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).then(j => { LOGOS = j || {}; document.querySelectorAll('.lg[data-s]').forEach(el => { if (LOGOS[el.dataset.s] === 'png') el.outerHTML = logo(el.dataset.s, el.dataset.n, +el.dataset.z); }); }).catch(() => { });
+function logo(sym, name, z = 28) {
+  const n = (name || sym || '?').replace(/^[^가-힣A-Za-z0-9]+/, '');
+  if (LOGOS[sym] === 'png') return `<img class="lg" src="logos/${encodeURIComponent(sym)}.png" alt="" width="${z}" height="${z}" loading="lazy" onerror="this.outerHTML=logoMono('${esc(sym)}','${esc(n).replace(/'/g, '')}',${z})">`;
+  return logoMono(sym, n, z);
+}
+function logoMono(sym, n, z) {
+  let h = 0; for (const ch of sym) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return `<span class="lg mono-lg" data-s="${esc(sym)}" data-n="${esc(n)}" data-z="${z}" style="width:${z}px;height:${z}px;font-size:${Math.round(z * 0.46)}px;background:hsl(${h} 35% 32%)">${esc(n.slice(0, 1))}</span>`;
+}
 const LS = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { } } };
 const main = $('#main');
 const C = { ma20: '#7C9CFF', ma60: '#E8891D', ma120: '#B8A6FF' };
@@ -195,7 +207,7 @@ async function renderDesk() {
     const below = uniq.filter(x => x.price < c).sort((x, y) => y.price - x.price)[0], abv = uniq.filter(x => x.price >= c).sort((x, y) => x.price - y.price)[0];
     trs.push({ s, jd, c, k, chg, rsi, below, abv, one });
     return `<a class="card st-${jd?.chip || 'none'}" href="#/t/${encodeURIComponent(s)}">
-      <div class="card-h"><div><div class="card-n w">${nameOf(s, J)} <span class="mut mono" style="font-size:11px">${esc(s)}</span></div><div class="mut mono" style="font-size:11px">${r.asof} 종가</div></div>${chip(jd)}</div>
+      <div class="card-h"><div class="lgrow">${logo(s, nameOf(s, J), 32)}<div><div class="card-n w">${nameOf(s, J)} <span class="mut mono" style="font-size:11px">${esc(s)}</span></div><div class="mut mono" style="font-size:11px">${r.asof} 종가</div></div></div>${chip(jd)}</div>
       <div class="card-p"><span class="mono ${cls(chg)}" style="font-size:24px;font-weight:600">${fmtP(c, k)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>${why ? `<span class="mut" style="font-size:11px">${why}</span>` : ''}<span class="card-sp">${sparkline(rows.slice(-30).map(x => x.close), rows.length > 30 && rows[rows.length - 1].close >= rows[rows.length - 30].close ? C.up : C.dn, 80, 24)}</span></div>
       ${levelBar(uniq, c, k)}
       <div class="card-f"><span class="${rsi < 30 ? 'ok' : rsi > 70 ? 'warn' : 'mut'}">${term('RSI')} ${rsi.toFixed(0)}${rsi < 30 ? ' 과매도' : rsi > 70 ? ' 과매수' : ''}</span><span class="mut">·</span><span class="mut">${term('거래량')} ${r.rsi_volume.vol_ratio.toFixed(1)}×</span>${r.pattern?.type ? `<span class="mut">·</span><span class="warn">${term('쐐기', r.pattern.type)}</span>` : ''}${FL?.[s] ? `<span class="mut">·</span><span class="${FL[s].fo['5'] >= 0 ? 'up' : 'dn'}">외+기 5일 ${eok(FL[s].fo['5'])}</span>` : ''}</div>
@@ -212,7 +224,7 @@ async function renderDesk() {
     return `<div class="mini">${lab(x.below, 'left')}${lab(x.abv, 'right')}${md(x.below, 'left')}${md(x.abv, 'right')}<div class="t"></div>${x.below ? `<div class="m" style="left:2%;background:${x.below.color}"></div>` : ''}${x.abv ? `<div class="m" style="left:98%;background:${x.abv.color}"></div>` : ''}<div class="m now" style="left:${pos(x.c)}%"></div></div>`;
   };
   const dist = (o, c) => o ? `<span class="${o.price < c ? 'ok' : 'warn'}">${sgn(pct(o.price, c))}</span>` : '<span class="mut">—</span>';
-  const table = `<div class="tbl"><div class="tr"><span>종목</span><span>종가</span><span>받침 ↔ 천장 (현재 위치)</span><span class="d">아래선까지</span><span class="d">위선까지</span><span class="d">RSI</span><span>상태</span></div>${trs.map(x => `<a class="tr" href="#/t/${encodeURIComponent(x.s)}" title="${esc(x.one)}"><span class="n">${nameOf(x.s, J)}<small>${esc(x.s)}</small></span><span class="pr ${cls(x.chg)}">${fmtP(x.c, x.k)}<small>${sgn(x.chg)}</small></span>${miniBar(x)}<span class="d hd">${dist(x.below, x.c)}</span><span class="d hd">${dist(x.abv, x.c)}</span><span class="d hd ${x.rsi < 30 ? 'ok' : x.rsi > 70 ? 'warn' : 'mut'}">${x.rsi.toFixed(0)}</span><span>${chip(x.jd)}</span></a>`).join('')}</div>`;
+  const table = `<div class="tbl"><div class="tr"><span>종목</span><span>종가</span><span>받침 ↔ 천장 (현재 위치)</span><span class="d">아래선까지</span><span class="d">위선까지</span><span class="d">RSI</span><span>상태</span></div>${trs.map(x => `<a class="tr" href="#/t/${encodeURIComponent(x.s)}" title="${esc(x.one)}"><span class="n lgrow">${logo(x.s, nameOf(x.s, J), 26)}<span>${nameOf(x.s, J)}<small>${esc(x.s)}</small></span></span><span class="pr ${cls(x.chg)}">${fmtP(x.c, x.k)}<small>${sgn(x.chg)}</small></span>${miniBar(x)}<span class="d hd">${dist(x.below, x.c)}</span><span class="d hd">${dist(x.abv, x.c)}</span><span class="d hd ${x.rsi < 30 ? 'ok' : x.rsi > 70 ? 'warn' : 'mut'}">${x.rsi.toFixed(0)}</span><span>${chip(x.jd)}</span></a>`).join('')}</div>`;
   const view = LS.get('deskView') || 'card';
   main.innerHTML = `
     <form class="find" id="findF" autocomplete="off"><input id="findQ" placeholder="종목 찾기 — 이름·코드·미국 티커 (예: 한화에어로스페이스, NVDA)" enterkeyhint="search"><button class="btn pri">분석</button></form><div id="findMsg" class="find-msg" hidden></div>
@@ -220,7 +232,7 @@ async function renderDesk() {
     ${(() => { const al = (AL?.alerts || []); if (!al.length) return '';
       const pr = { '손절 이탈': 0, '손절 근접': 1, '진입 조건': 2, '추세선 돌파': 3, '수급 전환': 4, '하단선 이탈': 5, '합류 받침': 6, 'RSI 과매도': 7, '합류 천장': 8 };
       const sorted = [...al].sort((a, b) => (pr[a.rule] ?? 9) - (pr[b.rule] ?? 9));
-      const row = x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w">${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`;
+      const row = x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w lgrow">${logo(x.symbol, nameOf(x.symbol, J), 18)}${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`;
       const head = sorted.slice(0, 4).map(row).join(''), rest = sorted.slice(4).map(row).join('');
       return `<section class="alerts"><header><span>오늘 알림 ${al.length}</span><small>규칙당 하루 1회 · ${AL.asof}</small></header><div class="al-list">${head}${rest ? `<details class="al-more"><summary>${sorted.length - 4}개 더</summary>${rest}</details>` : ''}</div></section>`; })()}
     <div class="sumrow">${sum || '<span class="mut">판단 결과 없음</span>'}<span class="vt"><button data-v="card" class="${view === 'card' ? 'on' : ''}">카드</button><button data-v="table" class="${view === 'table' ? 'on' : ''}">표</button></span><span class="mut" style="margin-left:auto;font-size:11px">탭 → 종목 페이지</span></div>
@@ -315,7 +327,7 @@ function flowRadar(FL, J) {
   const bar = v => `<div class="fr-b"><div class="fr-mid"></div><div class="fr-f" style="${v >= 0 ? 'left:50%' : `right:50%`};width:${Math.abs(v) / m * 50}%;background:${v >= 0 ? 'var(--up)' : 'var(--dn)'}"></div></div>`;
   return `<section><header><span>수급 레이더</span><small>외국인+기관 순매수 · 5일 순 정렬</small></header><div class="fr-l">
     <div class="fr hd"><span></span><span>5일</span><span>20일</span><span></span></div>
-    ${ents.map(([s, f]) => `<a class="fr" href="#/t/${encodeURIComponent(s)}"><b class="w">${nameOf(s, J)}</b><span class="fr-v">${bar(f.fo['5'])}<small class="mono ${f.fo['5'] >= 0 ? 'up' : 'dn'}">${eok(f.fo['5'])}</small></span><span class="fr-v">${bar(f.fo['20'])}<small class="mono ${f.fo['20'] >= 0 ? 'up' : 'dn'}">${eok(f.fo['20'])}</small></span><span class="chip ${f.tone === 'mut' ? '' : f.tone}" style="font-size:10px">${esc(f.state.split(' — ')[0])}</span></a>`).join('')}
+    ${ents.map(([s, f]) => `<a class="fr" href="#/t/${encodeURIComponent(s)}"><b class="w lgrow">${logo(s, nameOf(s, J), 20)}<span>${nameOf(s, J)}</span></b><span class="fr-v">${bar(f.fo['5'])}<small class="mono ${f.fo['5'] >= 0 ? 'up' : 'dn'}">${eok(f.fo['5'])}</small></span><span class="fr-v">${bar(f.fo['20'])}<small class="mono ${f.fo['20'] >= 0 ? 'up' : 'dn'}">${eok(f.fo['20'])}</small></span><span class="chip ${f.tone === 'mut' ? '' : f.tone}" style="font-size:10px">${esc(f.state.split(' — ')[0])}</span></a>`).join('')}
   </div></section>`;
 }
 /* 엔진 성적표 — 엔진이 한 말이 5일 뒤 맞았나 */
@@ -392,7 +404,7 @@ async function renderTicker(sym) {
     <div class="sig"><div class="sig-k">체온</div><div class="sig-v"><span class="mono ${rv.rsi < 30 ? 'ok' : rv.rsi > 70 ? 'warn' : ''}">${term('RSI')} ${rv.rsi.toFixed(0)}</span> <span class="mono mut">· ${rv.vol_ratio.toFixed(1)}×</span></div><div class="sig-d">${rv.rsi < 30 ? '과매도 · ' : rv.rsi > 70 ? '과매수 · ' : ''}${rv.vol_ratio < 0.7 && chg < 0 ? '거래량 없이 하락(매수 부재)' : rv.vol_ratio > 1.8 && chg < -3 ? '거래량 동반 하락(투매)' : '거래량 보통'}${r.pattern?.type ? ` · ${term('쐐기', r.pattern.type)}${r.pattern.bars_to_apex ? ` ${r.pattern.bars_to_apex}봉` : ''}` : ''}</div></div>
   </div>`;
   main.innerHTML = `
-    <div class="thead"><div class="bar"><a href="#/" class="back">‹</a><h1>${nameOf(sym, J)} <span class="mut mono" style="font-size:12px;font-weight:400">${esc(sym)}</span></h1>${jd ? `<span style="margin-left:auto">${chip(jd)}</span>` : ''}</div>
+    <div class="thead"><div class="bar"><a href="#/" class="back">‹</a><h1 class="lgrow">${logo(sym, nameOf(sym, J), 30)}${nameOf(sym, J)} <span class="mut mono" style="font-size:12px;font-weight:400">${esc(sym)}</span></h1>${jd ? `<span style="margin-left:auto">${chip(jd)}</span>` : ''}</div>
       <div class="bar"><span class="mono ${cls(chg)}" style="font-size:26px;font-weight:600">${f(c)}</span><span class="mono ${cls(chg)}" style="font-size:14px">${sgn(chg)}</span><span class="mut mono" style="font-size:11px">${r.asof} 종가 · 야후 15분 지연</span></div></div>
     <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}<small>${esc(PLAIN[jd?.chip] || (conf.length ? '유명한 선 여러 개가 겹치는 가격 근처예요. 한 번 튀어오를 수는 있지만 바닥이 확정된 건 아니에요.' : '가까운 기준선이 없어서 다음 기준선까지 미끄러질 수 있어요.'))}</small></div>
     <div class="pos"><div class="pos-k">지금 어디쯤? <span class="mut">← 받침 · 천장 → · 흰 막대 = 현재가</span></div>${levelBar(keyLevels(r, jd), c, k)}</div>
@@ -481,7 +493,7 @@ async function renderSettings() {
   const [al, J] = await Promise.all([j('out/alerts.json'), j('out/judgement.json')]);
   main.innerHTML = `
     <div class="bar"><h1>알림 · 설정</h1></div>
-    <section><header><span>오늘 알림 ${(al?.alerts || []).length}</span><small>규칙당 하루 1회 · 서버 푸시는 설정 후</small></header><div class="al-list">${(al?.alerts || []).length ? al.alerts.map(x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w">${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`).join('') : '<div class="sent"><div class="mut">알림 없음</div></div>'}</div></section>
+    <section><header><span>오늘 알림 ${(al?.alerts || []).length}</span><small>규칙당 하루 1회 · 서버 푸시는 설정 후</small></header><div class="al-list">${(al?.alerts || []).length ? al.alerts.map(x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w lgrow">${logo(x.symbol, nameOf(x.symbol, J), 18)}${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`).join('') : '<div class="sent"><div class="mut">알림 없음</div></div>'}</div></section>
     <section><header><span>앱 알림 (웹 푸시)</span></header><div class="sent">
       <div>· 브라우저 지원: <b class="${supported ? 'ok' : 'dn'}">${supported ? '됨' : '안 됨'}</b> · 권한: <b>${perm}</b></div>
       ${ios && !standalone ? '<div class="warn">· 아이폰은 공유 → "홈 화면에 추가" 후 그 아이콘으로 열어야 알림이 옵니다.</div>' : ''}
@@ -535,7 +547,7 @@ async function renderScreener() {
     const parts = Object.entries(r.parts).map(([k, v]) => `<span class="pt" title="${k} ${v}"><i style="height:${Math.max(2, Math.round(v * 0.3))}px"></i><em>${k}</em></span>`).join('');
     const analyzed = J?.[r.symbol];
     return `<a class="sc2 ${r.awake ? 'awake' : ''}" href="#/t/${encodeURIComponent(r.symbol)}">
-      <div class="sc2-h"><span class="sc2-rk mono">${i + 1}</span><div><b class="w">${esc(r.name)}</b>${r.awake ? ' <span class="chip ok" style="font-size:10px">★ 깨어남</span>' : ''}${analyzed ? ' <span class="chip" style="font-size:10px;color:var(--tag)">관심</span>' : ''}${(r.gov_flags || []).length ? ` <span class="chip warn" style="font-size:10px">⚠ ${esc(r.gov_flags[0])}</span>` : ''}<div class="mut mono" style="font-size:11px">${r.market === 'KOSPI' ? '코스피' : '코스닥'} · 시총 ${r.cap >= 10000 ? (r.cap / 10000).toFixed(1) + '조' : Math.round(r.cap).toLocaleString() + '억'} · PER ${r.per?.toFixed(1)}${r.ind_per ? ` <span class="mut">(업종 ${r.ind_per.toFixed(1)})</span>` : ''}</div></div><div class="sc2-sc"><b class="mono">${Math.round(r.score)}</b><small>점</small></div></div>
+      <div class="sc2-h"><span class="sc2-rk mono">${i + 1}</span><div class="lgrow" style="align-items:flex-start">${logo(r.symbol, r.name, 34)}<div><b class="w">${esc(r.name)}</b>${r.awake ? ' <span class="chip ok" style="font-size:10px">★ 깨어남</span>' : ''}${analyzed ? ' <span class="chip" style="font-size:10px;color:var(--tag)">관심</span>' : ''}${(r.gov_flags || []).length ? ` <span class="chip warn" style="font-size:10px">⚠ ${esc(r.gov_flags[0])}</span>` : ''}<div class="mut mono" style="font-size:11px">${r.market === 'KOSPI' ? '코스피' : '코스닥'} · 시총 ${r.cap >= 10000 ? (r.cap / 10000).toFixed(1) + '조' : Math.round(r.cap).toLocaleString() + '억'} · PER ${r.per?.toFixed(1)}${r.ind_per ? ` <span class="mut">(업종 ${r.ind_per.toFixed(1)})</span>` : ''}</div></div></div><div class="sc2-sc"><b class="mono">${Math.round(r.score)}</b><small>점</small></div></div>
       <div class="sc2-b">${twin}<div class="pts">${parts}</div></div>
       <div class="sc2-w">${r.why.slice(1).map(x => `<span>${esc(x)}</span>`).join('')}</div></a>`;
   };

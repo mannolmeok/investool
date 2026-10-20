@@ -23,6 +23,6 @@ jobs:
       - run: python engine/run_daily.py
       - run: |
           git config user.name investool-bot; git config user.email bot@investool
-          git add -A data out positions.json watchlist.txt
+          git add -A logos data out positions.json watchlist.txt
           git commit -m "screener: $(date -u +%F)" || exit 0
           git pull --rebase -X theirs && git push
