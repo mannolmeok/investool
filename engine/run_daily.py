@@ -10,6 +10,7 @@ from render import render
 from judge import main as judge_main
 from attribution import main as attribution_main
 from alerts import main as alerts_main
+from track import main as track_main
 
 KST = timezone(timedelta(hours=9))
 
@@ -31,6 +32,10 @@ def main():
     at = attribution_main()
     jd = judge_main()
     al, al_new = alerts_main()
+    try:
+        track_main()
+    except Exception as e:  # 검증 로그 실패가 배치를 막지 않게
+        print('track fail', e)
     md.append("## 알림")
     for a in al: md.append(f"- [{a['level']}] **{a['symbol']}** {a['rule']}: {a['text']}")
     md.append("")

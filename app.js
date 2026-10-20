@@ -164,7 +164,7 @@ function chip(jd) {
 /* ------------------------------------------------------------ 데스크 */
 async function renderDesk() {
   setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const [syms, J, A, AL, EV] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json')]);
+  const [syms, J, A, AL, EV, TR] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/track.json')]);
   const items = (await Promise.all(syms.map(async s => ({ s, r: await j(`out/${s}.json`), rows: await loadCsv(s) })))).filter(x => x.r);
   const ctx = [['^KS11', '코스피'], ['^KQ11', '코스닥'], ['^GSPC', 'S&P 500'], ['^VIX', 'VIX 공포지수']];
   const sect = await Promise.all([['SOXX', '반도체 ETF'], ['IONQ', '아이온큐'], ['RGTI', '리게티'], ['QBTS', '디웨이브']].map(async ([s, n]) => ({ s, n, rows: await loadCsv(s) })));
@@ -225,6 +225,7 @@ async function renderDesk() {
     <div class="sumrow">${sum || '<span class="mut">판단 결과 없음</span>'}<span class="vt"><button data-v="card" class="${view === 'card' ? 'on' : ''}">카드</button><button data-v="table" class="${view === 'table' ? 'on' : ''}">표</button></span><span class="mut" style="margin-left:auto;font-size:11px">탭 → 종목 페이지</span></div>
     <div class="cards" ${view === 'table' ? 'hidden' : ''}>${cards}</div>
     <div id="tblv" ${view === 'card' ? 'hidden' : ''}>${table}</div>
+    ${trackStrip(TR)}
     ${eventsStrip(EV, J)}
     <div class="mut" style="font-size:12px;padding:2px 2px 0">시장 맥락</div>
     <div class="mkts">${mkt || '<div class="mut" style="padding:8px 12px">시장 지표는 다음 배치 후 표시</div>'}</div>
@@ -235,6 +236,39 @@ async function renderDesk() {
   $('#foot').textContent = `읽음 ${stamp()}`;
 }
 
+/* 엔진 성적표 — 엔진이 한 말이 5일 뒤 맞았나 */
+function rateBar(pct, ref, col) {
+  return `<div class="rb"><div class="rb-t"><div class="rb-f" style="width:${pct ?? 0}%;background:${col}"></div>${ref != null ? `<div class="rb-r" style="left:${ref}%" title="더미 ${ref}%"></div>` : ''}</div><b class="mono">${pct != null ? pct + '%' : '—'}</b></div>`;
+}
+function trackStrip(TR) {
+  if (!TR?.summary) return '';
+  const S = TR.summary, d = S['더미 받침']?.pct;
+  return `<a class="trk" href="#/track"><header><span>엔진 성적표</span><small>${S['기간'].from} ~ ${S['기간'].to} · ${S.horizon}일 뒤 채점 · 자세히 ›</small></header>
+    <div class="trk-g">
+      <div><div class="trk-k">★받침에 오면 <b class="ok">튀었나</b></div>${rateBar(S['받침'].pct, d, C.ok)}<div class="trk-s">${S['받침'].n}번 중 ${S['받침'].good} · 아무 가격이면 ${d ?? '—'}%</div></div>
+      <div><div class="trk-k">★천장에 오면 <b class="warn">막혔나</b></div>${rateBar(S['천장'].pct, null, C.warn)}<div class="trk-s">${S['천장'].n}번 중 ${S['천장'].good}</div></div>
+      <div><div class="trk-k">추세선 넘은 뒤 <b class="up">5일 더 올랐나</b></div>${rateBar(S['추세선'].win, null, C.up)}<div class="trk-s">${S['추세선'].n_ret}번 · 평균 ${sgn(S['추세선'].avg_ret_after)}</div></div>
+    </div></a>`;
+}
+async function renderTrack() {
+  setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
+  const [TR, J] = await Promise.all([j('out/track.json'), j('out/judgement.json')]);
+  if (!TR) { main.innerHTML = '<div class="bar"><a href="#/" class="back">‹</a><h1>엔진 성적표</h1><span class="mut">다음 배치 후 생성</span></div>'; return; }
+  const S = TR.summary;
+  const tone = { 반응: 'ok', 막힘: 'ok', 돌파: 'up', 이탈: 'dn', '못 넘음': 'mut', 애매: 'mut', '안 옴': 'mut', 대기: 'mut', '진행 중': 'warn' };
+  const res = (p) => { const r = p.kind === '천장' && p.result === '돌파' ? 'dn' : tone[p.result] || 'mut'; return `<span class="chip ${r}" style="font-size:10px;padding:0 6px">${p.kind} ${p.result || '대기'}</span>`; };
+  const rows = TR.rows.filter(r => r.preds.length).slice(0, 120).map(r => `<a class="tkr" href="#/t/${encodeURIComponent(r.sym)}"><span class="mono mut">${r.asof.slice(5)}</span><b class="w">${nameOf(r.sym, J)}</b><span class="mono ${cls(r.ret5 ?? r.ret1)}">${r.ret5 != null ? sgn(r.ret5) : r.ret1 != null ? sgn(r.ret1) + '<small class="mut"> (1일)</small>' : '—'}</span><span class="tkr-p">${r.preds.map(res).join('')}</span>${r.src === '재현' ? '<span class="mut" style="font-size:10px">재현</span>' : '<span class="ok" style="font-size:10px">실시간</span>'}</a>`).join('');
+  main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1>엔진 성적표</h1><span class="mut" style="font-size:12px">엔진이 한 말 → 실제로 맞았나</span></div>
+    ${trackStrip(TR).replace('<a class="trk" href="#/track">', '<div class="trk">').replace(' · 자세히 ›', '').replace(/<\/a>$/, '</div>')}
+    <section><header><span>읽는 법</span></header><div class="sent">
+      <div>· <b class="ok">받침</b>: 엔진이 "여기서 튈 수 있다"고 한 가격에 5일 안에 왔을 때, 5일째 종가가 그 위면 <b class="ok">반응</b>, 2% 넘게 아래면 <b class="dn">이탈</b>.</div>
+      <div>· 회색 세로선 = <b>아무 가격</b>(현재가 0.5~3% 아래 무작위)에 같은 규칙을 댄 결과. 받침 막대가 이 선보다 <b>오른쪽</b>이어야 엔진이 쓸모 있다는 뜻.</div>
+      <div>· <b>재현</b> = 지난 날짜를 그날 데이터까지만 써서 다시 돌린 기록. <b class="ok">실시간</b> = ${S['기간']['실시간_시작'] || '오늘'}부터 매일 쌓이는 진짜 기록. 2주 뒤 실시간만으로 다시 판단.</div>
+      <div class="mut">· 같은 받침이 며칠 연속 잡히면 여러 번 세어져서, 재현 구간 숫자는 실제보다 부풀 수 있음.</div>
+    </div></section>
+    <section><header><span>기록 ${TR.rows.length}건</span><small>최근 120건</small></header><div class="tkr-l">${rows}</div></section>`;
+  bindTerms();
+}
 /* ------------------------------------------------------------ 종목 페이지 */
 async function renderTicker(sym) {
   setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
@@ -428,6 +462,7 @@ function route() {
   if (h === '#/screener') return renderScreener();
   if (h === '#/journal') return renderJournal();
   if (h === '#/settings') return renderSettings();
+  if (h === '#/track') return renderTrack();
   return renderDesk();
 }
 window.addEventListener('hashchange', route);

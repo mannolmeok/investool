@@ -58,6 +58,17 @@ section>header small{color:var(--mut);font-weight:400;font-size:11px}
 .card{border-left:3px solid var(--line)}
 .card.st-exit{border-left-color:var(--up)}.card.st-warn{border-left-color:var(--warn)}.card.st-enter,.card.st-target{border-left-color:var(--ok)}.card.st-hold{border-left-color:var(--tag)}
 [hidden]{display:none!important}
+.trk{display:block;text-decoration:none;color:var(--txt);border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.trk header{display:flex;justify-content:space-between;align-items:baseline;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line);font-weight:600;color:var(--w);font-size:13px}.trk header small{font-weight:400;color:var(--mut);font-size:11px}
+.trk-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:12px 14px}
+.trk-k{font-size:12px;margin-bottom:6px}.trk-s{font-size:11px;color:var(--mut);margin-top:4px}
+.rb{display:flex;align-items:center;gap:8px}.rb b{font-size:15px;color:var(--w);min-width:40px;text-align:right}
+.rb-t{position:relative;flex:1;height:8px;background:var(--track);border-radius:4px}
+.rb-f{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.rb-r{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--mut)}
+.tkr-l{display:flex;flex-direction:column}
+.tkr{display:grid;grid-template-columns:44px 110px 80px 1fr 40px;gap:10px;align-items:center;padding:7px 14px;border-top:1px solid var(--line);text-decoration:none;color:var(--txt);font-size:12px}
+.tkr:hover{background:var(--hi)}.tkr-p{display:flex;flex-wrap:wrap;gap:4px}
 .gi{display:block;flex:0 0 auto;width:112px;height:63px;border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:2px}
 #tip .gi{width:100%;height:auto;max-width:200px;margin:4px 0 8px}
 .gl{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0}
@@ -203,6 +214,8 @@ details summary{padding:8px 12px;background:var(--panel);cursor:pointer;font-wei
   .tr{grid-template-columns:104px 84px 1fr 60px;gap:8px;padding:9px 10px}
   .tr .hd{display:none}.tr .n{font-size:13px}.tr .pr{font-size:13px}
   .tr:first-child{display:none}
+  .trk-g{grid-template-columns:1fr;gap:12px}
+  .tkr{grid-template-columns:38px 1fr 64px;row-gap:4px;padding:8px 10px}.tkr .tkr-p{grid-column:1/4}.tkr>span:last-child{display:none}
   .mini .lab{display:none}.mini .md{display:block}
 }
 </style>
