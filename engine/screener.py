@@ -192,6 +192,12 @@ def main():
     C = [r for r in C if r["gap"] is not None and r["gap"] > 0]
     log(f"gate ③ 이익>주가 통과 {len(C)} / {n0}")
     why["이미 많이 오름"] = n0 - len(C)
+    # DART (키 있을 때만): 분할 이력·최대주주·감사의견·상장 자회사
+    try:
+        import dart
+        dart.enrich(C, [r["name"] for r in rows])
+    except Exception as e:
+        log("dart fail", repr(e)[:100])
     # 점수 (후보 안 백분위)
     col = lambda k: [r.get(k) for r in C]
     for r in C:
