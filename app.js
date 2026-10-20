@@ -1,5 +1,6 @@
 /* investool PWA v2 — 시각 우선. out/*.json + data/*.csv 만 읽는다 (서버 없음) */
 const $ = (s, el = document) => el.querySelector(s);
+const LS = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { } } };
 const main = $('#main');
 const C = { ma20: '#7C9CFF', ma60: '#E8891D', ma120: '#B8A6FF' };
 /* 테마 토큰은 CSS 변수에서 읽는다 (다크/라이트 공용) */
@@ -9,7 +10,7 @@ function syncTheme() {
   C.ma200 = C.w; C.ma120 = C.tag; C.sma20 = C.ma20; C.sma60 = C.ma60; C.sma120 = C.ma120; C.sma200 = C.ma200;
   const m = document.getElementById('themeColor'); if (m) m.content = v('--nav') || C.bg;
 }
-function setTheme(t) { localStorage.setItem('theme', t); const real = t === 'system' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : t; document.documentElement.dataset.theme = real; syncTheme(); }
+function setTheme(t) { LS.set('theme', t); const real = t === 'system' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : t; document.documentElement.dataset.theme = real; syncTheme(); }
 syncTheme();
 
 const fmtP = (v, krw) => v == null ? '—' : krw ? Math.round(v).toLocaleString('ko-KR') : v.toFixed(2);
@@ -212,7 +213,7 @@ async function renderDesk() {
   };
   const dist = (o, c) => o ? `<span class="${o.price < c ? 'ok' : 'warn'}">${sgn(pct(o.price, c))}</span>` : '<span class="mut">—</span>';
   const table = `<div class="tbl"><div class="tr"><span>종목</span><span>종가</span><span>받침 ↔ 천장 (현재 위치)</span><span class="d">아래선까지</span><span class="d">위선까지</span><span class="d">RSI</span><span>상태</span></div>${trs.map(x => `<a class="tr" href="#/t/${encodeURIComponent(x.s)}" title="${esc(x.one)}"><span class="n">${nameOf(x.s, J)}<small>${esc(x.s)}</small></span><span class="pr ${cls(x.chg)}">${fmtP(x.c, x.k)}<small>${sgn(x.chg)}</small></span>${miniBar(x)}<span class="d hd">${dist(x.below, x.c)}</span><span class="d hd">${dist(x.abv, x.c)}</span><span class="d hd ${x.rsi < 30 ? 'ok' : x.rsi > 70 ? 'warn' : 'mut'}">${x.rsi.toFixed(0)}</span><span>${chip(x.jd)}</span></a>`).join('')}</div>`;
-  const view = localStorage.getItem('deskView') || 'card';
+  const view = LS.get('deskView') || 'card';
   main.innerHTML = `
     <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span><span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
     ${(() => { const al = (AL?.alerts || []); if (!al.length) return '';
@@ -230,7 +231,7 @@ async function renderDesk() {
     ${sectH ? `<div class="sects"><span class="mut">업종 맥락</span>${sectH}</div>` : ''}
     <details class="rules"><summary>규칙 3줄</summary><div class="sent"><div>· 모든 판단은 종가 기준. 장중 흔들림은 무시.</div><div>· 손절선 없이 매수 없음. 반등 확인 전 물타기 금지.</div><div>· 문장은 가능성 표현. 확률 숫자 없음. 반대 근거 1줄 필수.</div></div></details>`;
   bindTerms();
-  document.querySelectorAll('.vt button').forEach(b => b.onclick = () => { localStorage.setItem('deskView', b.dataset.v); document.querySelectorAll('.vt button').forEach(x => x.classList.toggle('on', x === b)); $('.cards').hidden = b.dataset.v === 'table'; $('#tblv').hidden = b.dataset.v === 'card'; });
+  document.querySelectorAll('.vt button').forEach(b => b.onclick = () => { LS.set('deskView', b.dataset.v); document.querySelectorAll('.vt button').forEach(x => x.classList.toggle('on', x === b)); $('.cards').hidden = b.dataset.v === 'table'; $('#tblv').hidden = b.dataset.v === 'card'; });
   $('#foot').textContent = `읽음 ${stamp()}`;
 }
 
@@ -280,7 +281,7 @@ async function renderTicker(sym) {
     <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}<small>${esc(PLAIN[jd?.chip] || (conf.length ? '유명한 선 여러 개가 겹치는 가격 근처예요. 한 번 튀어오를 수는 있지만 바닥이 확정된 건 아니에요.' : '가까운 기준선이 없어서 다음 기준선까지 미끄러질 수 있어요.'))}</small></div>
     <div class="pos"><div class="pos-k">지금 어디쯤? <span class="mut">← 받침 · 천장 → · 흰 막대 = 현재가</span></div>${levelBar(keyLevels(r, jd), c, k)}</div>
     ${(() => { const items = [...((AL?.alerts || []).filter(x => x.symbol === sym).map(x => ({ t: x.text, lv: x.level, rule: x.rule }))), ...((jd?.watch_today || []).filter(x => !(x.startsWith('★') && (AL?.alerts || []).some(a => a.symbol === sym && a.rule.startsWith('합류')))).map(x => ({ t: x, lv: 'mut' })))];
-      if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+      if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(LS.get(key) || '{}'); } catch {}
       return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
     ${sig}
     <div class="grid2">
@@ -351,8 +352,8 @@ async function renderSettings() {
     <section><header><span>앱 알림 (웹 푸시)</span></header><div class="sent">
       <div>· 브라우저 지원: <b class="${supported ? 'ok' : 'dn'}">${supported ? '됨' : '안 됨'}</b> · 권한: <b>${perm}</b></div>
       ${ios && !standalone ? '<div class="warn">· 아이폰은 공유 → "홈 화면에 추가" 후 그 아이콘으로 열어야 알림이 옵니다.</div>' : ''}
-      <div style="text-indent:0;padding-left:0"><button class="btn pri" id="btnNotif">알림 켜기</button> <span class="mut" id="notifMsg"></span></div></div></section>
-    <section><header><span>화면</span><small>다크가 기본 · 밝은 곳에선 라이트</small></header><div class="sent"><div style="text-indent:0;padding-left:0"><span class="vt" style="margin:0" id="themeSel">${['dark', 'light', 'system'].map(t => `<button data-t="${t}" class="${(localStorage.getItem('theme') || 'dark') === t ? 'on' : ''}">${{ dark: '다크', light: '라이트', system: '기기 설정' }[t]}</button>`).join('')}</span></div></div></section>
+      <div style="text-indent:0;padding-left:0"><button class="btn pri" id="btnNotif">알림 켜기</button> <span class="mut" id="notifMsg"></span></div><div id="subBox" hidden style="text-indent:0;padding-left:0;margin-top:8px"><textarea id="subTxt" readonly rows="3" style="width:100%;box-sizing:border-box;font:11px var(--mono,monospace);background:var(--nav);color:var(--txt);border:1px solid var(--ctl);border-radius:4px;padding:6px"></textarea><button class="btn" id="btnCopy" style="margin-top:6px">구독 코드 복사</button> <span class="mut" style="font-size:11px">→ Claude에게 붙여넣기 (또는 저장소 push_subs.json 에 추가)</span></div></div></section>
+    <section><header><span>화면</span><small>다크가 기본 · 밝은 곳에선 라이트</small></header><div class="sent"><div style="text-indent:0;padding-left:0"><span class="vt" style="margin:0" id="themeSel">${['dark', 'light', 'system'].map(t => `<button data-t="${t}" class="${(LS.get('theme') || 'dark') === t ? 'on' : ''}">${{ dark: '다크', light: '라이트', system: '기기 설정' }[t]}</button>`).join('')}</span></div></div></section>
     <section><header><span>데이터 상태</span><small>종목별 마지막 종가일</small></header><div class="sent">${Object.values(J || {}).map(x => { const d = x.asof ? Math.round((Date.now() - new Date(x.asof)) / 864e5) : null; return `<div><b class="w">${esc(x.name || x.symbol)}</b> <span class="mono ${d > 4 ? 'warn' : 'mut'}">${x.asof || '—'}${d != null ? ` (${d}일 전)` : ''}</span></div>`; }).join('') || '<div class="mut">—</div>'}<div class="mut">야후 파이낸스 일봉 · 15분 지연 · 장중 봉은 제외 · 국내 봉은 야후 반영이 반나절 늦을 때가 있음</div></div></section>
     <section><header><span>관심 종목</span><small>watchlist.txt</small></header><div class="sent"><div>· 저장소의 <span class="mono">watchlist.txt</span>에 야후 심볼 한 줄 추가 → 다음 배치부터 (코스피 .KS / 코스닥 .KQ)</div></div></section>
     <section><header><span>용어</span><small>탭하면 설명</small></header><div class="gl">${Object.keys(G).map(k => `<div class="gl-i">${GI[k] || ''}<div><b>${term(k)}</b><div class="mut">${esc(G[k])}</div></div></div>`).join('')}</div></section>`;
@@ -363,17 +364,22 @@ async function renderSettings() {
     const p = await Notification.requestPermission();
     if (p !== 'granted') { m.textContent = '권한이 거부됐어요.'; return; }
     const reg = await navigator.serviceWorker.ready;
-    if (!cfg.SUPABASE_URL || !cfg.VAPID_PUBLIC_KEY) {
-      reg.showNotification('investool', { body: '알림 권한 OK. 서버 연결(Supabase)은 아직 — 연결되면 자동으로 구독돼요.', icon: 'icons/icon-192.png' });
-      m.textContent = '권한은 켜졌어요. 서버 구독은 설정 후.'; return;
-    }
+    if (!cfg.VAPID_PUBLIC_KEY) { m.textContent = 'config.js 에 VAPID 공개키가 없어요.'; return; }
     try {
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(cfg.VAPID_PUBLIC_KEY) });
-      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/push_subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`, Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify({ endpoint: sub.endpoint, sub: sub.toJSON() }) });
-      m.textContent = res.ok ? '구독 완료 — 다음 배치부터 알림이 와요.' : `구독 저장 실패 (${res.status})`;
-      reg.showNotification('investool', { body: '알림 구독 완료', icon: 'icons/icon-192.png' });
+      const js = JSON.stringify(sub.toJSON());
+      if (cfg.SUPABASE_URL) {
+        const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/push_subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`, Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify({ endpoint: sub.endpoint, sub: sub.toJSON() }) });
+        m.textContent = res.ok ? '구독 완료 — 다음 배치부터 알림이 와요.' : `구독 저장 실패 (${res.status})`;
+      } else {
+        // DB 없는 1인용: 이 기기의 구독 정보를 복사 → push_subs.json 에 추가 (Claude에게 붙여넣어도 됨)
+        $('#subBox').hidden = false; $('#subTxt').value = js;
+        m.textContent = '이 기기 구독 완료. 아래 코드를 복사해서 등록하면 끝.';
+      }
+      reg.showNotification('investool', { body: '알림 테스트 — 이 기기에서 알림이 보이면 OK', icon: 'icons/icon-192.png' });
     } catch (e) { m.textContent = '구독 실패: ' + e.message; }
   };
+  $('#btnCopy').onclick = async () => { const t = $('#subTxt'); try { await navigator.clipboard.writeText(t.value); $('#btnCopy').textContent = '복사됨 ✓'; } catch { t.select(); document.execCommand('copy'); $('#btnCopy').textContent = '복사됨 ✓'; } };
   bindTerms();
 }
 async function renderScreener() {
@@ -401,8 +407,8 @@ async function renderJournal() {
 function b64ToU8(b) { const p = '='.repeat((4 - b.length % 4) % 4); const s = (b + p).replace(/-/g, '+').replace(/_/g, '/'); const r = atob(s); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); }
 function bindTodo() {
   document.querySelectorAll('.todo-i input').forEach(cb => cb.onchange = () => {
-    const key = cb.dataset.key; let d = {}; try { d = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
-    d[cb.dataset.i] = cb.checked; try { localStorage.setItem(key, JSON.stringify(d)); } catch {}
+    const key = cb.dataset.key; let d = {}; try { d = JSON.parse(LS.get(key) || '{}'); } catch {}
+    d[cb.dataset.i] = cb.checked; try { LS.set(key, JSON.stringify(d)); } catch {}
     cb.closest('.todo-i').classList.toggle('done', cb.checked);
   });
 }

@@ -1,8 +1,11 @@
-"""push.py — 웹 푸시 전송 (P1.5)
-전제: Supabase 테이블 push_subscriptions(id, endpoint text unique, sub jsonb, created_at)
-      GitHub Secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY, VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY, VAPID_SUBJECT(mailto:)
-동작: out/alerts.json 의 new[] 만 전송 (규칙당 하루 1회는 alerts.py 가 보장)
-설정이 없으면 조용히 건너뜀 (배치가 깨지지 않게).
+"""push.py — 웹 푸시 전송
+필요한 것: GitHub Secret VAPID_PRIVATE_KEY 1개 (+ 선택 VAPID_SUBJECT)
+구독 목록: push_subs.json (앱 '알림 켜기' → 구독 코드 복사 → 이 파일에 추가). DB 없음.
+          구독 정보만으로는 푸시를 보낼 수 없음(VAPID 비밀키 필요) → 저장소에 있어도 안전.
+선택: SUPABASE_URL/SUPABASE_SERVICE_KEY 가 있으면 그 테이블 구독도 합쳐서 보냄.
+동작: out/alerts.json 의 new[] 만 전송. 설정이 없으면 조용히 건너뜀.
+사용: python engine/push.py            (새 알림 전송)
+      python engine/push.py --test     (테스트 알림 1건)
 """
 import json, os, sys
 from pathlib import Path
@@ -11,33 +14,58 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "out"
 
 
-def main():
+def load_subs():
+    subs = []
+    f = ROOT / "push_subs.json"
+    if f.exists():
+        try:
+            d = json.loads(f.read_text(encoding="utf-8") or "[]")
+            subs += d if isinstance(d, list) else [d]
+        except Exception as e:
+            print("push_subs.json 읽기 실패:", e)
     url, key = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_KEY")
-    vpriv, vpub, subj = os.environ.get("VAPID_PRIVATE_KEY"), os.environ.get("VAPID_PUBLIC_KEY"), os.environ.get("VAPID_SUBJECT", "mailto:noreply@example.com")
-    if not (url and key and vpriv):
-        print("push: 설정 없음 → 건너뜀"); return
-    try:
+    if url and key:
         import requests
+        rows = requests.get(f"{url}/rest/v1/push_subscriptions?select=sub", headers={"apikey": key, "Authorization": f"Bearer {key}"}, timeout=20).json()
+        subs += [r["sub"] for r in rows]
+    seen, out = set(), []
+    for s in subs:
+        if s.get("endpoint") and s["endpoint"] not in seen:
+            seen.add(s["endpoint"]); out.append(s)
+    return out
+
+
+def main():
+    vpriv = os.environ.get("VAPID_PRIVATE_KEY")
+    subj = os.environ.get("VAPID_SUBJECT") or "mailto:noreply@example.com"
+    if not vpriv:
+        print("push: VAPID_PRIVATE_KEY 없음 → 건너뜀"); return
+    try:
         from pywebpush import webpush, WebPushException
     except ImportError:
-        print("push: pywebpush/requests 미설치 → 건너뜀"); return
-    al = json.loads((OUT / "alerts.json").read_text(encoding="utf-8"))
-    new = al.get("new") or []
+        print("push: pywebpush 미설치 → 건너뜀"); return
+    subs = load_subs()
+    if not subs:
+        print("push: 구독 없음 (push_subs.json 비어 있음) → 건너뜀"); return
+    if "--test" in sys.argv:
+        new = [{"symbol": "investool", "rule": "테스트", "text": "알림 연결 확인 — 이게 보이면 끝."}]
+    else:
+        al = json.loads((OUT / "alerts.json").read_text(encoding="utf-8"))
+        new = al.get("new") or []
     if not new:
         print("push: 새 알림 없음"); return
-    subs = requests.get(f"{url}/rest/v1/push_subscriptions?select=endpoint,sub", headers={"apikey": key, "Authorization": f"Bearer {key}"}, timeout=20).json()
+    names = json.loads((ROOT / "positions.json").read_text(encoding="utf-8")).get("names", {})
     sent = 0
     for a in new:
-        payload = json.dumps({"title": f"{a['symbol']} · {a['rule']}", "body": a["text"][:160], "url": f"./#/t/{a['symbol']}"}, ensure_ascii=False)
+        title = f"{names.get(a['symbol'], a['symbol'])} · {a['rule']}"
+        payload = json.dumps({"title": title, "body": a["text"][:160], "url": f"./#/t/{a['symbol']}"}, ensure_ascii=False)
         for s in subs:
             try:
-                webpush(subscription_info=s["sub"], data=payload, vapid_private_key=vpriv, vapid_claims={"sub": subj}, ttl=3600)
+                webpush(subscription_info=s, data=payload, vapid_private_key=vpriv, vapid_claims={"sub": subj}, ttl=3600)
                 sent += 1
             except WebPushException as e:
                 code = getattr(e.response, "status_code", None)
-                if code in (404, 410):  # 만료 구독 삭제
-                    requests.delete(f"{url}/rest/v1/push_subscriptions?endpoint=eq.{s['endpoint']}", headers={"apikey": key, "Authorization": f"Bearer {key}"}, timeout=20)
-                print("push fail", code, str(e)[:120])
+                print("push fail", code, "(404/410 = 만료된 구독, push_subs.json 에서 지우기)" if code in (404, 410) else str(e)[:120])
     print(f"push: {sent}건 전송 ({len(new)} 알림 × {len(subs)} 구독)")
 
 
