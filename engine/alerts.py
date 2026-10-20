@@ -21,7 +21,7 @@ def pct(a, b):
     return (a / b - 1) * 100
 
 
-def rules_for(sym, r, jd, pos):
+def rules_for(sym, r, jd, pos, fl=None):
     k, c = r["krw"], r["close"]
     f = lambda v: fmt(v, k)
     A = []
@@ -59,6 +59,9 @@ def rules_for(sym, r, jd, pos):
     rv = r.get("rsi_volume", {})
     if rv.get("rsi", 50) < 30 <= rv.get("rsi_prev", 50):
         A.append(dict(rule="RSI 과매도", level="ok", key=f"{sym}:rsi30:{asof}", text=f"RSI {rv['rsi']:.0f} — 과매도 진입. 거래량 {rv['vol_ratio']:.1f}×."))
+    # 보조) 수급 전환: 20일 순매도였는데 최근 5일 외국인+기관 순매수
+    if fl and fl["fo"]["20"] <= 0 < fl["fo"]["5"]:
+        A.append(dict(rule="수급 전환", level="ok", key=f"{sym}:flow_turn:{fl['asof']}", text=f"외국인+기관 5일 {fl['fo']['5']:+,.0f}억 순매수 (20일은 {fl['fo']['20']:+,.0f}억) — 팔던 쪽이 사기 시작. 차트 받침·추세선과 같이 확인."))
     for a in A:
         a["symbol"] = sym; a["asof"] = asof
     return A
@@ -72,13 +75,15 @@ def main():
     sent = json.loads(sent_p.read_text(encoding="utf-8")) if sent_p.exists() else {}
     today = str(date.today())
     syms = [s.strip() for s in (ROOT / "watchlist.txt").read_text().splitlines() if s.strip() and not s.startswith("#")]
+    fp = OUT / "flows.json"
+    FL = json.loads(fp.read_text(encoding="utf-8")) if fp.exists() else {}
     alerts, new = [], []
     for s in syms:
         jp = OUT / f"{s}.json"
         if not jp.exists():
             continue
         r = json.loads(jp.read_text(encoding="utf-8"))
-        for a in rules_for(s, r, jd.get(s), pos.get(s)):
+        for a in rules_for(s, r, jd.get(s), pos.get(s), FL.get(s)):
             alerts.append(a)
             if sent.get(a["key"]) != today:  # 규칙당 하루 1회
                 new.append(a); sent[a["key"]] = today

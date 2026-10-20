@@ -3,7 +3,7 @@
       신고점을 돌파하는 종목" · "영원히 주목 못 받을 애들 말고 몇 년 안에 주목받을 애들" · 평균 90일 보유 · 리스크 관리 최우선
 
 축 (네이버 증권 모바일 API + 야후 1년 일봉)
- ① 인지도    시총 ≥ 1조 · 20일 평균 거래대금 ≥ 30억 · 우선주/스팩/리츠 제외
+ ① 인지도    시총 ≥ 3천억(수집) · 20일 평균 거래대금 ≥ 30억 · 우선주/스팩/리츠 제외 — 화면에서 3천억~1조 / 1~5조 / 5조↑ 필터
  ② 실적      최근 4분기 영업이익 모두 흑자 · 추정 EPS > 현재 EPS (앞으로도 증가 = "몇 년 안에 주목받을")
  ③ 저평가    PER 업종 중간값 대비 할인 · PER 절대 수준
  ④ 실적 신고점 직전 분기 매출 또는 영업이익이 확인 가능한 분기 중 최고 · 연간 영업이익 증가 행진
@@ -23,7 +23,7 @@ import naver
 from naver import num
 
 KST = timezone(timedelta(hours=9))
-MIN_CAP = 10000       # 억원 (= 1조)
+MIN_CAP = 3000        # 억원 — 수집 하한(잡주 컷). 화면에서 시총 구간 필터
 MIN_TV = 30           # 억원 (20일 평균 거래대금)
 EXCL = ("스팩", "리츠", "REIT", "ETN")
 WATCH_TAG = "# --- 스크리너 (자동 · 주 1회 교체) ---"
@@ -88,6 +88,11 @@ def collect(u):
         if op.get(ky) and op.get(k) is not None and op[ky] > 0:
             op_yoy = op[k] / op[ky] - 1
     g_fwd = (cns_eps / eps - 1) if (eps and cns_eps and eps > 0) else None
+    # 지배구조: 연결 순이익 중 비지배지분(상장·비상장 자회사의 다른 주주 몫) 비중 — 지주사·중복상장 할인의 대표 신호
+    ni, nci = fin["rows"].get("당기순이익", {}), fin["rows"].get("비지배주주순이익", {})
+    k4 = [k for k in act[-4:] if ni.get(k) is not None and nci.get(k) is not None]
+    ni4, nci4 = sum(ni[k] for k in k4), sum(nci[k] for k in k4)
+    nci_ratio = (nci4 / ni4) if (k4 and ni4 > 0) else None
     sales = fin["rows"].get("매출액", {})
     def is_high(row):
         v = [row.get(k) for k in act if row.get(k) is not None]
@@ -108,7 +113,7 @@ def collect(u):
     cons = raw.get("consensusInfo") or {}
     return {**u, "close": close, "per": per, "pbr": pbr, "eps": eps, "cns_eps": cns_eps, "g_fwd": g_fwd, "op_yoy": op_yoy,
             "op_last4": last4, "profitable": len(last4) >= 4 and all(x > 0 for x in last4),
-            "hi_op": hi_op, "hi_sales": hi_sales, "annual_up": a_up, "op_annual": a_last,
+            "hi_op": hi_op, "hi_sales": hi_sales, "annual_up": a_up, "op_annual": a_last, "nci_ratio": nci_ratio,
             "tv20": round(tv20, 1), "turnover": (tv20 / u["cap"]) if u["cap"] else None,
             "flow20": round(f20, 1), "flow5": round(f5, 1),
             "hi52": hi52, "lo52": lo52, "pos52": ((close - lo52) / (hi52 - lo52)) if (close and hi52 and lo52 and hi52 > lo52) else None,
@@ -141,6 +146,19 @@ def main():
         time.sleep(0.25)
         if i % 50 == 0:
             log(i, u["name"])
+    # 업종 이름 + 지배구조 플래그
+    try:
+        inames = {str(g["no"]): g["name"] for g in naver.get("/api/stocks/industry").get("groups", [])}
+    except Exception:
+        inames = {}
+    for r in rows:
+        r["industry_name"] = inames.get(str(r["industry"]), "")
+        f = []
+        if any(x in r["name"] for x in ("홀딩스", "지주")) or r["industry_name"] in ("복합기업",):
+            f.append("지주사")
+        if r["nci_ratio"] is not None and r["nci_ratio"] >= 0.3:
+            f.append(f"자회사 몫 {r['nci_ratio']*100:.0f}%")
+        r["gov_flags"] = f
     # 업종 PER 중간값 (흑자·PER>0 만)
     ind = {}
     for r in rows:
@@ -187,7 +205,7 @@ def main():
         r["awake"] = r["flow20"] > 0 and r["flow5"] > 0
         r["why"] = reasons(r)
     C.sort(key=lambda r: r["score"], reverse=True)
-    top = C[:40]
+    top = C  # 전부 저장 — 화면에서 시총·시장·지배구조·수급 필터
     res = {"asof": datetime.now(KST).strftime("%Y-%m-%d %H:%M"), "universe": len(rows), "passed": len(C), "dropped": why,
            "rule": {"min_cap_eok": MIN_CAP, "min_tv_eok": MIN_TV}, "rows": top}
     (ROOT / "out" / "screener.json").write_text(json.dumps(res, ensure_ascii=False, indent=0, default=float), encoding="utf-8")
@@ -215,6 +233,8 @@ def reasons(r):
     elif r.get("annual_up"):
         w.append("연간 영업이익 계속 증가")
     w.append(f"최근 60일 리포트 {r['reports60']}건 · 하루 거래대금 {r['tv20']:.0f}억")
+    if r.get("gov_flags"):
+        w.append("⚠ 지배구조: " + " · ".join(r["gov_flags"]) + " — 이익 상당 부분이 자회사 다른 주주 몫. 지주사·중복상장 할인으로 계속 싸게 머물 수 있음")
     if r.get("pos52") is not None:
         w.append(f"52주 범위 아래에서 {r['pos52']*100:.0f}% 지점")
     if r["awake"]:
@@ -232,7 +252,8 @@ def update_watch(top, k):
     else:
         head = lines
     keep = [l for l in head if l.strip()]
-    picks = sorted(top, key=lambda r: (not r["awake"], -r["score"]))[:k]
+    pool = [r for r in top if not r.get("gov_flags") and r["cap"] >= 5000]
+    picks = sorted(pool, key=lambda r: (not r["awake"], -r["score"]))[:k]
     new = [r["symbol"] for r in picks if r["symbol"] not in keep]
     wl.write_text("\n".join(keep + ["", WATCH_TAG] + new) + "\n")
     pj = ROOT / "positions.json"; cfg = json.loads(pj.read_text(encoding="utf-8"))

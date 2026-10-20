@@ -164,7 +164,7 @@ function chip(jd) {
 /* ------------------------------------------------------------ 데스크 */
 async function renderDesk() {
   setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const [syms, J, A, AL, EV, TR] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/track.json')]);
+  const [syms, J, A, AL, EV, TR, FL] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/track.json'), j('out/flows.json')]);
   const items = (await Promise.all(syms.map(async s => ({ s, r: await j(`out/${s}.json`), rows: await loadCsv(s) })))).filter(x => x.r);
   const ctx = [['^KS11', '코스피'], ['^KQ11', '코스닥'], ['^GSPC', 'S&P 500'], ['^VIX', 'VIX 공포지수']];
   const sect = await Promise.all([['SOXX', '반도체 ETF'], ['IONQ', '아이온큐'], ['RGTI', '리게티'], ['QBTS', '디웨이브']].map(async ([s, n]) => ({ s, n, rows: await loadCsv(s) })));
@@ -198,7 +198,7 @@ async function renderDesk() {
       <div class="card-h"><div><div class="card-n w">${nameOf(s, J)} <span class="mut mono" style="font-size:11px">${esc(s)}</span></div><div class="mut mono" style="font-size:11px">${r.asof} 종가</div></div>${chip(jd)}</div>
       <div class="card-p"><span class="mono ${cls(chg)}" style="font-size:24px;font-weight:600">${fmtP(c, k)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>${why ? `<span class="mut" style="font-size:11px">${why}</span>` : ''}<span class="card-sp">${sparkline(rows.slice(-30).map(x => x.close), rows.length > 30 && rows[rows.length - 1].close >= rows[rows.length - 30].close ? C.up : C.dn, 80, 24)}</span></div>
       ${levelBar(uniq, c, k)}
-      <div class="card-f"><span class="${rsi < 30 ? 'ok' : rsi > 70 ? 'warn' : 'mut'}">${term('RSI')} ${rsi.toFixed(0)}${rsi < 30 ? ' 과매도' : rsi > 70 ? ' 과매수' : ''}</span><span class="mut">·</span><span class="mut">${term('거래량')} ${r.rsi_volume.vol_ratio.toFixed(1)}×</span>${r.pattern?.type ? `<span class="mut">·</span><span class="warn">${term('쐐기', r.pattern.type)}</span>` : ''}</div>
+      <div class="card-f"><span class="${rsi < 30 ? 'ok' : rsi > 70 ? 'warn' : 'mut'}">${term('RSI')} ${rsi.toFixed(0)}${rsi < 30 ? ' 과매도' : rsi > 70 ? ' 과매수' : ''}</span><span class="mut">·</span><span class="mut">${term('거래량')} ${r.rsi_volume.vol_ratio.toFixed(1)}×</span>${r.pattern?.type ? `<span class="mut">·</span><span class="warn">${term('쐐기', r.pattern.type)}</span>` : ''}${FL?.[s] ? `<span class="mut">·</span><span class="${FL[s].fo['5'] >= 0 ? 'up' : 'dn'}">외+기 5일 ${eok(FL[s].fo['5'])}</span>` : ''}</div>
       <div class="card-one">${esc(one)}</div>
     </a>`;
   }).join('');
@@ -218,7 +218,7 @@ async function renderDesk() {
     <form class="find" id="findF" autocomplete="off"><input id="findQ" placeholder="종목 찾기 — 이름·코드·미국 티커 (예: 한화에어로스페이스, NVDA)" enterkeyhint="search"><button class="btn pri">분석</button></form><div id="findMsg" class="find-msg" hidden></div>
     <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span><span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
     ${(() => { const al = (AL?.alerts || []); if (!al.length) return '';
-      const pr = { '손절 이탈': 0, '손절 근접': 1, '진입 조건': 2, '추세선 돌파': 3, '하단선 이탈': 4, '합류 받침': 5, 'RSI 과매도': 6, '합류 천장': 7 };
+      const pr = { '손절 이탈': 0, '손절 근접': 1, '진입 조건': 2, '추세선 돌파': 3, '수급 전환': 4, '하단선 이탈': 5, '합류 받침': 6, 'RSI 과매도': 7, '합류 천장': 8 };
       const sorted = [...al].sort((a, b) => (pr[a.rule] ?? 9) - (pr[b.rule] ?? 9));
       const row = x => `<a class="al" href="#/t/${encodeURIComponent(x.symbol)}"><span class="chip ${x.level}">${esc(x.rule)}</span><b class="w">${nameOf(x.symbol, J)}</b><span class="dim">${esc(x.text)}</span></a>`;
       const head = sorted.slice(0, 4).map(row).join(''), rest = sorted.slice(4).map(row).join('');
@@ -226,6 +226,7 @@ async function renderDesk() {
     <div class="sumrow">${sum || '<span class="mut">판단 결과 없음</span>'}<span class="vt"><button data-v="card" class="${view === 'card' ? 'on' : ''}">카드</button><button data-v="table" class="${view === 'table' ? 'on' : ''}">표</button></span><span class="mut" style="margin-left:auto;font-size:11px">탭 → 종목 페이지</span></div>
     <div class="cards" ${view === 'table' ? 'hidden' : ''}>${cards}</div>
     <div id="tblv" ${view === 'card' ? 'hidden' : ''}>${table}</div>
+    ${flowRadar(FL, J)}
     ${trackStrip(TR)}
     ${eventsStrip(EV, J)}
     <div class="mut" style="font-size:12px;padding:2px 2px 0">시장 맥락</div>
@@ -270,6 +271,53 @@ function bindFind(J) {
     setTimeout(tick, 15000);
   };
 }
+/* 수급 — "내 뒤에 사줄 사람이 있나" */
+const FC = { f: '#B8A6FF', o: '#F5A623', i: '#8A8A8A' };
+const eok = v => v == null ? '—' : (v >= 0 ? '+' : '−') + Math.abs(v).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '억';
+function flowChart(F) {
+  const W = 640, H = 200, P = { l: 8, r: 56, t: 10, b: 54 }, n = F.daily.length;
+  const all = [...F.cum.f, ...F.cum.o, ...F.cum.i, 0];
+  const lo = Math.min(...all), hi = Math.max(...all), span = (hi - lo) || 1;
+  const x = i => P.l + i * (W - P.l - P.r) / Math.max(1, n - 1);
+  const y = v => P.t + (hi - v) / span * (H - P.t - P.b);
+  const path = arr => arr.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const bars = F.daily.map(d => d.f + d.o), bm = Math.max(1, ...bars.map(Math.abs)), by = H - 22, bh = 18;
+  const bw = Math.max(2, (W - P.l - P.r) / n - 2);
+  const lab = (k, t) => { const v = F.cum[k][n - 1]; return `<text x="${W - P.r + 6}" y="${y(v) + 4}" font-size="11" fill="${FC[k]}">${t} ${eok(v)}</text>`; };
+  return `<svg viewBox="0 0 ${W} ${H}" class="fchart" preserveAspectRatio="none">
+    <line x1="${P.l}" x2="${W - P.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--ctl)" stroke-dasharray="3 3"/>
+    <text x="${P.l}" y="${y(0) - 4}" font-size="10" fill="var(--mut)">0 (60일 전 기준)</text>
+    <path d="${path(F.cum.i)}" fill="none" stroke="${FC.i}" stroke-width="1.5" opacity=".8"/>
+    <path d="${path(F.cum.o)}" fill="none" stroke="${FC.o}" stroke-width="2"/>
+    <path d="${path(F.cum.f)}" fill="none" stroke="${FC.f}" stroke-width="2.4"/>
+    ${lab('f', '외')}${lab('o', '기')}${lab('i', '개')}
+    <line x1="${P.l}" x2="${W - P.r}" y1="${by}" y2="${by}" stroke="var(--line)"/>
+    ${bars.map((v, i) => { const h = Math.abs(v) / bm * bh; return `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${(v >= 0 ? by - h : by).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.5, h).toFixed(1)}" fill="${v >= 0 ? 'var(--up)' : 'var(--dn)'}" opacity=".75"/>`; }).join('')}
+    <text x="${P.l}" y="${H - 2}" font-size="10" fill="var(--mut)">${F.daily[0].d.slice(4, 6)}/${F.daily[0].d.slice(6)}</text>
+    <text x="${W - P.r}" y="${H - 2}" font-size="10" fill="var(--mut)" text-anchor="end">${F.asof.slice(4, 6)}/${F.asof.slice(6)}</text>
+    <text x="${W - P.r + 6}" y="${by + 4}" font-size="10" fill="var(--mut)">외+기 일별</text>
+  </svg>`;
+}
+function flowSection(F) {
+  if (!F) return '';
+  const cell = (t, v) => `<div class="fs-c"><span>${t}</span><b class="mono ${v >= 0 ? 'up' : 'dn'}">${eok(v)}</b></div>`;
+  return `<section class="flow"><header><span>수급 · 내 뒤에 사줄 사람이 있나</span><small>외국인·기관·개인 60일 누적 순매수 · ${F.asof.slice(4, 6)}/${F.asof.slice(6)}</small></header>
+    <div class="flow-st ${F.tone}">${esc(F.sentence)}</div>
+    <div class="fs">${cell('외+기 5일', F.fo['5'])}${cell('20일', F.fo['20'])}${cell('60일', F.fo['60'])}<div class="fs-c"><span>외국인 보유율</span><b class="mono">${F.hold.now ?? '—'}%</b><small class="${(F.hold.chg60 || 0) >= 0 ? 'up' : 'dn'}">${F.hold.chg60 != null ? (F.hold.chg60 >= 0 ? '+' : '') + F.hold.chg60.toFixed(2) + '%p' : ''}</small></div></div>
+    <div style="padding:4px 10px 0">${flowChart(F)}</div>
+    <div class="clegend" style="padding:4px 12px 10px"><span><i style="background:${FC.f}"></i>외국인</span><span><i style="background:${FC.o}"></i>기관</span><span><i style="background:${FC.i}"></i>개인</span><span class="mut">선이 오른쪽 위로 = 계속 사는 중 · 아래 막대 = 하루 외+기 합 (빨강 매수 / 파랑 매도)</span></div>
+  </section>`;
+}
+function flowRadar(FL, J) {
+  const ents = Object.entries(FL || {}); if (!ents.length) return '';
+  ents.sort((a, b) => b[1].fo['5'] - a[1].fo['5']);
+  const m = Math.max(1, ...ents.flatMap(([, f]) => [Math.abs(f.fo['5']), Math.abs(f.fo['20'])]));
+  const bar = v => `<div class="fr-b"><div class="fr-mid"></div><div class="fr-f" style="${v >= 0 ? 'left:50%' : `right:50%`};width:${Math.abs(v) / m * 50}%;background:${v >= 0 ? 'var(--up)' : 'var(--dn)'}"></div></div>`;
+  return `<section><header><span>수급 레이더</span><small>외국인+기관 순매수 · 5일 순 정렬</small></header><div class="fr-l">
+    <div class="fr hd"><span></span><span>5일</span><span>20일</span><span></span></div>
+    ${ents.map(([s, f]) => `<a class="fr" href="#/t/${encodeURIComponent(s)}"><b class="w">${nameOf(s, J)}</b><span class="fr-v">${bar(f.fo['5'])}<small class="mono ${f.fo['5'] >= 0 ? 'up' : 'dn'}">${eok(f.fo['5'])}</small></span><span class="fr-v">${bar(f.fo['20'])}<small class="mono ${f.fo['20'] >= 0 ? 'up' : 'dn'}">${eok(f.fo['20'])}</small></span><span class="chip ${f.tone === 'mut' ? '' : f.tone}" style="font-size:10px">${esc(f.state.split(' — ')[0])}</span></a>`).join('')}
+  </div></section>`;
+}
 /* 엔진 성적표 — 엔진이 한 말이 5일 뒤 맞았나 */
 function rateBar(pct, ref, col) {
   return `<div class="rb"><div class="rb-t"><div class="rb-f" style="width:${pct ?? 0}%;background:${col}"></div>${ref != null ? `<div class="rb-r" style="left:${ref}%" title="더미 ${ref}%"></div>` : ''}</div><b class="mono">${pct != null ? pct + '%' : '—'}</b></div>`;
@@ -306,7 +354,7 @@ async function renderTrack() {
 /* ------------------------------------------------------------ 종목 페이지 */
 async function renderTicker(sym) {
   setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const [r, rows, J, A, AL, EV] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json')]);
+  const [r, rows, J, A, AL, EV, FL] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/flows.json')]);
   if (!r) { main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1>${esc(sym)}</h1><span class="mut">분석 결과 없음 — 다음 배치 후 생성</span></div>`; return; }
   const jd = J?.[sym], a = A?.[sym], k = r.krw, c = r.close, f = v => fmtP(v, k);
   const chg = r.rsi_volume.chg_pct, rv = r.rsi_volume;
@@ -357,6 +405,7 @@ async function renderTicker(sym) {
         <div class="clegend" id="clegend"></div></section>
       <section><header><span>선 사다리</span><small>차트 구간의 선 · 현재가 기준</small></header>${ladder(r, rows)}</section>
     </div>
+    ${flowSection(FL?.[sym])}
     <div class="grid2b">${board}${attr}${eventsStrip(EV, J, sym)}</div>
     <section><header><span>★ ${term('합류')} · 반대 근거</span><small>유명한 선이 겹치는 자리</small></header><div class="sent">
       ${conf.length ? conf.map(g => `<div class="conf ${g.price < c ? '' : 'warn'}">★ ${g.price < c ? '받침' : '천장'} ${f(g.price)} (${sgn(pct(g.price, c))}) = ${esc(g.lines.join(' + '))}</div>`).join('') : '<div class="mut">현재가 ±2% 안에 겹치는 선 없음 — 다음 선까지 미끄러질 수 있음</div>'}
@@ -486,13 +535,36 @@ async function renderScreener() {
     const parts = Object.entries(r.parts).map(([k, v]) => `<span class="pt" title="${k} ${v}"><i style="height:${Math.max(2, Math.round(v * 0.3))}px"></i><em>${k}</em></span>`).join('');
     const analyzed = J?.[r.symbol];
     return `<a class="sc2 ${r.awake ? 'awake' : ''}" href="#/t/${encodeURIComponent(r.symbol)}">
-      <div class="sc2-h"><span class="sc2-rk mono">${i + 1}</span><div><b class="w">${esc(r.name)}</b>${r.awake ? ' <span class="chip ok" style="font-size:10px">★ 깨어남</span>' : ''}${analyzed ? ' <span class="chip" style="font-size:10px;color:var(--tag)">관심</span>' : ''}<div class="mut mono" style="font-size:11px">${r.market === 'KOSPI' ? '코스피' : '코스닥'} · 시총 ${r.cap >= 10000 ? (r.cap / 10000).toFixed(1) + '조' : Math.round(r.cap).toLocaleString() + '억'} · PER ${r.per?.toFixed(1)}${r.ind_per ? ` <span class="mut">(업종 ${r.ind_per.toFixed(1)})</span>` : ''}</div></div><div class="sc2-sc"><b class="mono">${Math.round(r.score)}</b><small>점</small></div></div>
+      <div class="sc2-h"><span class="sc2-rk mono">${i + 1}</span><div><b class="w">${esc(r.name)}</b>${r.awake ? ' <span class="chip ok" style="font-size:10px">★ 깨어남</span>' : ''}${analyzed ? ' <span class="chip" style="font-size:10px;color:var(--tag)">관심</span>' : ''}${(r.gov_flags || []).length ? ` <span class="chip warn" style="font-size:10px">⚠ ${esc(r.gov_flags[0])}</span>` : ''}<div class="mut mono" style="font-size:11px">${r.market === 'KOSPI' ? '코스피' : '코스닥'} · 시총 ${r.cap >= 10000 ? (r.cap / 10000).toFixed(1) + '조' : Math.round(r.cap).toLocaleString() + '억'} · PER ${r.per?.toFixed(1)}${r.ind_per ? ` <span class="mut">(업종 ${r.ind_per.toFixed(1)})</span>` : ''}</div></div><div class="sc2-sc"><b class="mono">${Math.round(r.score)}</b><small>점</small></div></div>
       <div class="sc2-b">${twin}<div class="pts">${parts}</div></div>
       <div class="sc2-w">${r.why.slice(1).map(x => `<span>${esc(x)}</span>`).join('')}</div></a>`;
   };
-  main.innerHTML = head + `<div class="mut mono" style="font-size:11px">${SC.asof} · 대상 ${SC.universe}종목 → 관문 통과 ${SC.passed} → 상위 ${SC.rows.length}${SC.dropped ? ` · 탈락: ${Object.entries(SC.dropped).map(([k, v]) => k + ' ' + v).join(' · ')}` : ''}</div>
-    <div class="sc2-l">${SC.rows.map(row).join('')}</div>
-    <section><header><span>읽는 법</span></header><div class="sent"><div>· <b class="ok">이익</b> 막대가 길고 <b>주가</b> 막대가 짧을수록 "번 만큼 안 오른" 종목.</div><div>· 오른쪽 작은 기둥 4개 = 점수 구성(싸다 30 · 신고점 25 · 미반영 25 · 성장 20). 기둥이 높을수록 그 항목이 강함.</div><div>· <b class="ok">★ 깨어남</b> = 최근 20일·5일 모두 외국인+기관 순매수. "내 뒤에 사줄 사람"이 들어오기 시작한 신호. ★ 상위 7개는 매주 관심 종목에 자동으로 들어가 선 분석·알림 대상이 돼요.</div><div>· 기준 출처: 워뇨띠 Q&A — "저평가를 먼저, 그다음 차트" · "주가가 아니라 매출·영업이익이 신고점을 돌파하는 종목" · "몇 년 안에 주목받을 애들" · 평균 90일 보유.</div><div class="mut">· 이익 = 추정 EPS 증가율(컨센서스, 틀릴 수 있음). 지분구조 난해·분할상장 남발·실적 이상은 자동으로 못 걸러요 — 직접 확인. 매수 추천이 아니라 볼 종목 목록이에요.</div></div></section>`;
+  let F = { cap: 'all', mkt: 'all', gov: 1, awake: 0, sort: 'score' };
+  try { F = { ...F, ...JSON.parse(LS.get('scrF') || '{}') }; } catch { }
+  const CAPS = [['all', '전체'], ['s', '3천억~1조'], ['m', '1~5조'], ['l', '5조↑']], MK = [['all', '전체'], ['KOSPI', '코스피'], ['KOSDAQ', '코스닥']];
+  const SORTS = [['score', '종합'], ['gap', '미반영'], ['val', '싸다'], ['flow', '수급(20일)']];
+  const seg = (key, opts) => `<span class="vt" data-k="${key}">${opts.map(([v, t]) => `<button data-v="${v}" class="${String(F[key]) === v ? 'on' : ''}">${t}</button>`).join('')}</span>`;
+  const tog = (key, t) => `<label class="tg"><input type="checkbox" data-t="${key}" ${F[key] ? 'checked' : ''}> ${t}</label>`;
+  main.innerHTML = head + `<div class="flt">
+      <div class="flt-r"><span class="flt-k">시총</span>${seg('cap', CAPS)}</div>
+      <div class="flt-r"><span class="flt-k">시장</span>${seg('mkt', MK)}<span class="flt-k" style="margin-left:8px">정렬</span>${seg('sort', SORTS)}</div>
+      <div class="flt-r">${tog('gov', '지배구조 주의 빼기 (지주사·자회사 몫 30%↑)')}${tog('awake', '★ 깨어남만')}</div>
+    </div>
+    <div class="mut mono" id="scrN" style="font-size:11px"></div>
+    <div class="sc2-l" id="scrL"></div>
+    <section><header><span>읽는 법</span></header><div class="sent"><div>· <b class="ok">이익</b> 막대가 길고 <b>주가</b> 막대가 짧을수록 "번 만큼 안 오른" 종목.</div><div>· 오른쪽 작은 기둥 4개 = 점수 구성(싸다 30 · 신고점 25 · 미반영 25 · 성장 20).</div><div>· <b class="ok">★ 깨어남</b> = 최근 20일·5일 모두 외국인+기관 순매수. ★ 상위 7개(지배구조 주의 제외, 시총 5천억↑)는 매주 관심 종목에 자동으로 들어가요.</div><div>· <b class="warn">⚠ 지배구조</b> = 이름·업종상 지주사이거나, 최근 4분기 연결 순이익 중 <b>비지배지분(자회사의 다른 주주 몫)</b>이 30% 이상. 상장 자회사가 많을수록 커져서 지주사·중복상장 할인의 신호예요.</div><div>· 기준 출처: 워뇨띠 Q&A — "저평가를 먼저, 그다음 차트" · "매출·영업이익이 신고점을 돌파하는 종목" · "몇 년 안에 주목받을 애들" · "지분구조 난해·분할상장 남발·실적 조작이 아니면".</div><div class="mut">· 분할상장 이력·최대주주 지분·감사의견은 DART 연결 후 추가 예정. 매수 추천이 아니라 볼 종목 목록이에요.</div></div></section>`;
+  const draw = () => {
+    LS.set('scrF', JSON.stringify(F));
+    let L = SC.rows.filter(r => (F.cap === 'all' || (F.cap === 's' ? r.cap < 10000 : F.cap === 'm' ? r.cap >= 10000 && r.cap < 50000 : r.cap >= 50000))
+      && (F.mkt === 'all' || r.market === F.mkt) && (!F.gov || !(r.gov_flags || []).length) && (!F.awake || r.awake));
+    const key = { score: r => r.score, gap: r => r.parts['미반영'], val: r => r.parts['싸다'], flow: r => r.flow20 }[F.sort];
+    L = [...L].sort((a, b) => key(b) - key(a));
+    $('#scrN').textContent = `${SC.asof} · 시총 3천억↑ ${SC.universe}종목 → 관문 통과 ${SC.passed} → 필터 후 ${L.length}` + (SC.dropped ? ` · 탈락: ${Object.entries(SC.dropped).map(([k, v]) => k + ' ' + v).join(' · ')}` : '');
+    $('#scrL').innerHTML = L.length ? L.slice(0, 60).map(row).join('') : '<div class="mut" style="padding:12px">조건에 맞는 종목이 없어요. 필터를 풀어보세요.</div>';
+  };
+  document.querySelectorAll('.flt .vt').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => { F[g.dataset.k] = b.dataset.v; g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); draw(); }));
+  document.querySelectorAll('.flt input[data-t]').forEach(c => c.onchange = () => { F[c.dataset.t] = c.checked ? 1 : 0; draw(); });
+  draw();
 }
 async function renderJournal() {
   setNav('journal'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';

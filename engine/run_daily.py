@@ -29,6 +29,11 @@ def main():
         md.append(f"![{s}](./{s}.png)")
         md += ["- " + x for x in r["sentences"]]
         md.append("")
+    try:
+        from flows import main as flows_main
+        flows_main()
+    except Exception as e:  # 네이버 장애가 배치를 막지 않게
+        print('flows fail', e)
     at = attribution_main()
     jd = judge_main()
     al, al_new = alerts_main()
