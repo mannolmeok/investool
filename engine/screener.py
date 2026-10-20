@@ -169,6 +169,11 @@ def main():
         g = r["g_fwd"] if r["g_fwd"] is not None else r["op_yoy"]
         r["growth"] = g
         r["gap"] = (g - r["ret1y"]) if (g is not None and r["ret1y"] is not None) else None
+    # ③ 미반영 관문: 이익이 주가보다 더 늘었어야 함 (이미 많이 오른 주도주 제외 — 워뇨띠: 삼전·두산에너빌·한미반도체 회피)
+    n0 = len(C)
+    C = [r for r in C if r["gap"] is not None and r["gap"] > 0]
+    log(f"gate ③ 이익>주가 통과 {len(C)} / {n0}")
+    why["이미 많이 오름"] = n0 - len(C)
     # 점수 (후보 안 백분위)
     col = lambda k: [r.get(k) for r in C]
     for r in C:
