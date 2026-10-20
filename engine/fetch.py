@@ -38,7 +38,21 @@ def fetch(sym: str) -> int:
         f = (lambda v: f"{round(v):d}") if krw else (lambda v: f"{v:.2f}")
         rows.append(f"{d},{f(q['open'][i])},{f(q['high'][i])},{f(q['low'][i])},{f(q['close'][i])},{int(q['volume'][i] or 0)}")
     DATA.mkdir(exist_ok=True)
-    (DATA / f"{sym}.csv").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    f = DATA / f"{sym}.csv"
+    # 야후가 가끔 최근 봉을 빠뜨린 채 응답 → 기존 파일의 더 최신 봉은 지우지 않고 합친다 (날짜 기준, 같은 날은 새 값)
+    if f.exists():
+        old = {l.split(",", 1)[0]: l for l in f.read_text(encoding="utf-8").splitlines()[1:] if l}
+        new = {l.split(",", 1)[0]: l for l in rows[1:]}
+        if new and old and max(old) > max(new):
+            print(f"{sym}: 응답 최신 {max(new)} < 기존 {max(old)} → 기존 최신 봉 유지")
+        if new:
+            merged = {d: l for d, l in old.items() if d >= min(new)}
+            merged.update(new)
+        else:
+            merged = old
+        # 1년 창 유지: 새 응답 범위 + 그 이후 기존 봉
+        rows = [rows[0]] + [merged[d] for d in sorted(merged)]
+    f.write_text("\n".join(rows) + "\n", encoding="utf-8")
     return len(rows) - 1
 
 

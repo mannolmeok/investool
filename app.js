@@ -353,8 +353,8 @@ async function renderTicker(sym) {
       return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
     ${sig}
     <div class="grid2">
-      <section><header><span>일봉 · 선 8종</span><small>확대·이동 가능</small></header><div id="chart"></div>
-        <div class="clegend"><span><i style="background:${C.ma20}"></i>20일</span><span><i style="background:${C.ma60}"></i>60일</span><span><i style="background:${C.ma120}"></i>120일</span><span><i style="background:${C.ma200}"></i>200일</span><span><i class="dash" style="border-color:${C.ok}"></i>${term('지지')}</span><span><i class="dash" style="border-color:${C.warn}"></i>${term('저항')}·${term('추세선')}</span><span><i class="dash" style="border-color:${C.tag}"></i>${term('피보')}</span><span><i style="background:${C.ok};height:8px"></i>★${term('합류')}</span></div></section>
+      <section><header><span>일봉</span><span class="vt" id="chartMode" style="margin-left:auto">${[["key", "핵심 선만"], ["all", "선 8종 전부"]].map(([m, t]) => `<button data-m="${m}" class="${(LS.get('chartMode') || 'key') === m ? 'on' : ''}">${t}</button>`).join('')}</span></header><div id="chart"></div>
+        <div class="clegend" id="clegend"></div></section>
       <section><header><span>선 사다리</span><small>차트 구간의 선 · 현재가 기준</small></header>${ladder(r, rows)}</section>
     </div>
     <div class="grid2b">${board}${attr}${eventsStrip(EV, J, sym)}</div>
@@ -364,12 +364,20 @@ async function renderTicker(sym) {
     <details class="more"><summary>자세한 해석 ${r.sentences.length}줄 · 정적 이미지</summary>
       <div class="sent">${r.sentences.map(s => `<div>· ${esc(s)}</div>`).join('')}</div>
       <img src="out/${encodeURIComponent(sym)}.png" style="width:100%;display:block;margin-top:8px" alt="배치가 만든 차트"></details>`;
-  drawChart(rows, r);
+  const legendHTML = all => {
+    const it = (c, t, dash) => `<span><i ${dash ? `class="dash" style="border-color:${c}"` : `style="background:${c}"`}></i>${t}</span>`;
+    return all ? [it(C.ma20, '20일'), it(C.ma60, '60일'), it(C.ma120, '120일'), it(C.ma200, '200일'), it(C.ok, term('지지'), 1), it(C.warn, term('저항') + '·' + term('추세선'), 1), it(C.tag, term('피보'), 1), it(C.ok, '★' + term('합류'))].join('')
+      : [it(C.ma20, '20일선'), it(C.ok, '가까운 ' + term('지지'), 1), it(C.warn, '가까운 ' + term('저항') + '·' + term('추세선'), 1), it(C.ok, '★받침/천장'), ...(jd?.held ? [it(C.up, term('손절'), 1)] : [])].join('') + '<span class="mut">· 나머지 선은 "선 8종 전부"</span>';
+  };
+  const redraw = () => { const all = (LS.get('chartMode') || 'key') === 'all'; const el = $('#chart'); el.innerHTML = ''; drawChart(rows, r, all, jd); $('#clegend').innerHTML = legendHTML(all); bindTerms(); };
+  redraw();
+  document.querySelectorAll('#chartMode button').forEach(b => b.onclick = () => { LS.set('chartMode', b.dataset.m); document.querySelectorAll('#chartMode button').forEach(x => x.classList.toggle('on', x === b)); redraw(); });
   bindTerms(); bindTodo();
   $('#foot').textContent = `${sym} · ${stamp()}`;
 }
 
-function drawChart(rows, r) {
+/* 기본은 '핵심 선만' — 선 30개 긋는 점액질 차트 금지(워뇨띠). 전부 보기는 토글로 */
+function drawChart(rows, r, all = false, jd = null) {
   const el = $('#chart'); if (!el || !window.LightweightCharts || !rows.length) return; const k = r.krw;
   const chart = LightweightCharts.createChart(el, {
     layout: { background: { color: C.bg }, textColor: C.mut, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 },
@@ -383,18 +391,26 @@ function drawChart(rows, r) {
   const vs = chart.addHistogramSeries({ priceScaleId: '', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
   vs.priceScale().applyOptions({ scaleMargins: { top: 0.84, bottom: 0 } });
   vs.setData(rows.map(x => ({ time: x.time, value: x.volume, color: (x.close >= x.open ? C.up : C.dn) + '66' })));
-  [[20, C.ma20], [60, C.ma60], [120, C.ma120], [200, C.ma200]].forEach(([w, col]) => {
+  (all ? [[20, C.ma20], [60, C.ma60], [120, C.ma120], [200, C.ma200]] : [[20, C.ma20]]).forEach(([w, col]) => {
     if (rows.length >= w) chart.addLineSeries({ color: col, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }).setData(sma(rows, w));
   });
   const pl = (price, color, title, style, label = true) => cs.createPriceLine({ price, color, lineWidth: 1, lineStyle: style, axisLabelVisible: label, title: label ? title : '' });
   const c = r.close;
   const sup = r.levels.filter(l => l.price < c).sort((x, y) => y.price - x.price)[0];
   const res = r.levels.filter(l => l.price >= c).sort((x, y) => x.price - y.price)[0];
-  r.levels.forEach(l => pl(l.price, l.price < c ? C.ok : C.warn, l.price < c ? '지지' : '저항', 2, l === sup || l === res));
-  Object.entries(r.fib.levels).forEach(([n, v]) => pl(v, C.tag, '', 3, false));
-  const confNear52 = (r.confluence || []).some(g => Math.abs(g.price / r.keys.w52_low - 1) < 0.006);
-  pl(r.keys.w52_low, C.dn, '52주저', 4, !confNear52);
-  (r.confluence || []).forEach(g => pl(g.price, C.ok, '★합류', 0, true));
+  const conf = r.confluence || [];
+  const nearConf = p => conf.some(g => Math.abs(g.price / p - 1) < 0.01);
+  if (all) {
+    r.levels.forEach(l => pl(l.price, l.price < c ? C.ok : C.warn, l.price < c ? '지지' : '저항', 2, l === sup || l === res));
+    Object.entries(r.fib.levels).forEach(([n, v]) => pl(v, C.tag, '', 3, false));
+    pl(r.keys.w52_low, C.dn, '52주저', 4, !nearConf(r.keys.w52_low));
+  } else {
+    // 핵심: 가장 가까운 지지·저항 1개씩 (합류와 겹치면 생략)
+    if (sup && !nearConf(sup.price)) pl(sup.price, C.ok, '지지', 2, true);
+    if (res && !nearConf(res.price)) pl(res.price, C.warn, '저항', 2, true);
+  }
+  conf.forEach(g => pl(g.price, g.price < c ? C.ok : C.warn, g.price < c ? '★받침' : '★천장', 0, true));
+  if (jd?.held && jd.stop) pl(jd.stop, C.up, '손절', 1, true);
   const idx = Object.fromEntries(rows.map((x, i) => [x.time, i]));
   const tl = (t, color, title) => {
     if (!t || idx[t.from] === undefined) return;
@@ -402,7 +418,7 @@ function drawChart(rows, r) {
     const pts = []; for (let i = i0; i < n; i++) pts.push({ time: rows[i].time, value: y0 + t.slope_per_bar * (i - i0) });
     chart.addLineSeries({ color, lineWidth: 2, priceLineVisible: false, lastValueVisible: !!title, crosshairMarkerVisible: false, title }).setData(pts);
   };
-  tl(r.trend_upper, C.warn, '추세'); tl(r.trend_lower, C.warn, '');
+  tl(r.trend_upper, C.warn, '추세'); if (all) tl(r.trend_lower, C.warn, '');
   chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, rows.length - 80), to: rows.length + 6 });
   new ResizeObserver(() => chart.applyOptions({ width: el.clientWidth, height: el.clientHeight })).observe(el);
 }
