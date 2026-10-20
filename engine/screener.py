@@ -239,8 +239,10 @@ def reasons(r):
     elif r.get("annual_up"):
         w.append("연간 영업이익 계속 증가")
     w.append(f"최근 60일 리포트 {r['reports60']}건 · 하루 거래대금 {r['tv20']:.0f}억")
+    if r.get("gov_notes"):
+        w.append("참고: " + " · ".join(r["gov_notes"]))
     if r.get("gov_flags"):
-        w.append("⚠ 지배구조: " + " · ".join(r["gov_flags"]) + " — 이익 상당 부분이 자회사 다른 주주 몫. 지주사·중복상장 할인으로 계속 싸게 머물 수 있음")
+        w.append("⚠ 지배구조: " + " · ".join(r["gov_flags"]) + " — 지주사·중복상장 할인이나 분할 이슈로 싸게 머물 수 있음")
     if r.get("pos52") is not None:
         w.append(f"52주 범위 아래에서 {r['pos52']*100:.0f}% 지점")
     if r["awake"]:

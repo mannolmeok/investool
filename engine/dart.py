@@ -51,10 +51,13 @@ def check(stock_code, corp_code, listed_names=()):
     try:
         L = _json("list.json", corp_code=corp_code, bgn_de=(today - timedelta(days=3 * 365)).strftime("%Y%m%d"),
                   end_de=today.strftime("%Y%m%d"), pblntf_detail_ty="B001", page_count=100)
-        sp = [x for x in L if "분할" in x.get("report_nm", "") and "결정" in x.get("report_nm", "")]
+        sp = [x for x in L if "분할" in x.get("report_nm", "") and "결정" in x.get("report_nm", "")
+              and not x.get("report_nm", "").lstrip().startswith("[")]  # [기재정정]·[첨부정정] 은 같은 결정 → 원본만
         out["splits"] = [{"date": x["rcept_dt"], "title": x["report_nm"].strip()} for x in sp]
-        if sp:
-            out["flags"].append(f"최근 3년 분할 결정 {len(sp)}건")
+        if len(sp) >= 2:
+            out["flags"].append(f"최근 3년 분할 결정 {len(sp)}번 (남발)")
+        elif sp:
+            out["notes"] = [f"{sp[0]['rcept_dt'][:4]}.{sp[0]['rcept_dt'][4:6]} 분할 결정 1번"]
     except Exception as e:
         out["err_split"] = repr(e)[:80]
     # 사업보고서 연도: 올해-1 (없으면 올해-2)
@@ -111,6 +114,7 @@ def enrich(rows, universe_names):
             r["dart"] = d
             r.setdefault("gov_flags", [])
             r["gov_flags"] += [f for f in d["flags"] if f not in r["gov_flags"]]
+            r["gov_notes"] = d.get("notes", []) + ([f"최대주주+특수관계인 {d['major_pct']:.0f}%"] if d.get("major_pct") is not None else [])
         except Exception as e:
             print("dart skip", r["name"], repr(e)[:80])
         time.sleep(0.15)

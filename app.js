@@ -548,11 +548,11 @@ async function renderScreener() {
   main.innerHTML = head + `<div class="flt">
       <div class="flt-r"><span class="flt-k">시총</span>${seg('cap', CAPS)}</div>
       <div class="flt-r"><span class="flt-k">시장</span>${seg('mkt', MK)}<span class="flt-k" style="margin-left:8px">정렬</span>${seg('sort', SORTS)}</div>
-      <div class="flt-r">${tog('gov', '지배구조 주의 빼기 (지주사·자회사 몫 30%↑)')}${tog('awake', '★ 깨어남만')}</div>
+      <div class="flt-r">${tog('gov', '지배구조 주의 빼기 (지주사·자회사 몫 30%↑·분할 남발·상장 자회사 2개↑·감사의견)')}${tog('awake', '★ 깨어남만')}</div>
     </div>
     <div class="mut mono" id="scrN" style="font-size:11px"></div>
     <div class="sc2-l" id="scrL"></div>
-    <section><header><span>읽는 법</span></header><div class="sent"><div>· <b class="ok">이익</b> 막대가 길고 <b>주가</b> 막대가 짧을수록 "번 만큼 안 오른" 종목.</div><div>· 오른쪽 작은 기둥 4개 = 점수 구성(싸다 30 · 신고점 25 · 미반영 25 · 성장 20).</div><div>· <b class="ok">★ 깨어남</b> = 최근 20일·5일 모두 외국인+기관 순매수. ★ 상위 7개(지배구조 주의 제외, 시총 5천억↑)는 매주 관심 종목에 자동으로 들어가요.</div><div>· <b class="warn">⚠ 지배구조</b> = 이름·업종상 지주사이거나, 최근 4분기 연결 순이익 중 <b>비지배지분(자회사의 다른 주주 몫)</b>이 30% 이상. 상장 자회사가 많을수록 커져서 지주사·중복상장 할인의 신호예요.</div><div>· 기준 출처: 워뇨띠 Q&A — "저평가를 먼저, 그다음 차트" · "매출·영업이익이 신고점을 돌파하는 종목" · "몇 년 안에 주목받을 애들" · "지분구조 난해·분할상장 남발·실적 조작이 아니면".</div><div class="mut">· 분할상장 이력·최대주주 지분·감사의견은 DART 연결 후 추가 예정. 매수 추천이 아니라 볼 종목 목록이에요.</div></div></section>`;
+    <section><header><span>읽는 법</span></header><div class="sent"><div>· <b class="ok">이익</b> 막대가 길고 <b>주가</b> 막대가 짧을수록 "번 만큼 안 오른" 종목.</div><div>· 오른쪽 작은 기둥 4개 = 점수 구성(싸다 30 · 신고점 25 · 미반영 25 · 성장 20).</div><div>· <b class="ok">★ 깨어남</b> = 최근 20일·5일 모두 외국인+기관 순매수. ★ 상위 7개(지배구조 주의 제외, 시총 5천억↑)는 매주 관심 종목에 자동으로 들어가요.</div><div>· <b class="warn">⚠ 지배구조</b> = 이름·업종상 지주사이거나, 최근 4분기 연결 순이익 중 <b>비지배지분(자회사의 다른 주주 몫)</b>이 30% 이상. 상장 자회사가 많을수록 커져서 지주사·중복상장 할인의 신호예요.</div><div>· 기준 출처: 워뇨띠 Q&A — "저평가를 먼저, 그다음 차트" · "매출·영업이익이 신고점을 돌파하는 종목" · "몇 년 안에 주목받을 애들" · "지분구조 난해·분할상장 남발·실적 조작이 아니면".</div><div>· DART(금융감독원) 확인: 최근 3년 회사분할 결정 2번↑ = 남발 ⚠ · 1번 = 참고 표시 · 상장 자회사 2개↑ ⚠ · 감사의견 비적정 ⚠ · 최대주주+특수관계인 지분은 참고로 표시.</div><div class="mut">· 매수 추천이 아니라 볼 종목 목록이에요.</div></div></section>`;
   const draw = () => {
     LS.set('scrF', JSON.stringify(F));
     let L = SC.rows.filter(r => (F.cap === 'all' || (F.cap === 's' ? r.cap < 10000 : F.cap === 'm' ? r.cap >= 10000 && r.cap < 50000 : r.cap >= 50000))
