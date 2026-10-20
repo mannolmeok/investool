@@ -9,7 +9,8 @@
 <title>investool · 데스크</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" media="print" onload="this.media='all'">
 <script>(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='system')t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=t;}catch(e){}})();</script>
 <style>
 :root{--hi:#222222;--ctl:#3A3A3A;--track:#2E2E2E;--bg:#1E1E1E;--nav:#161616;--panel:#252525;--line:#2A2A2A;--row:#232323;--txt:#DCDDDE;--mut:#8A8A8A;--dim:#B0B0B0;--w:#FFFFFF;--up:#F25C5C;--dn:#4F9CF9;--warn:#F5A623;--ok:#3FBF7F;--tag:#B8A6FF}
@@ -282,7 +283,7 @@ details summary{padding:8px 12px;background:var(--panel);cursor:pointer;font-wei
   <a href="#/" data-nav="desk">데스크</a><a href="#/screener" data-nav="screener">스크리너</a><a href="#/journal" data-nav="journal">일지</a><a href="#/settings" data-nav="settings">알림</a>
 </div>
 <script src="config.js"></script>
-<script src="vendor/lightweight-charts.standalone.production.js"></script>
-<script src="app.js"></script>
+<script src="vendor/lightweight-charts.standalone.production.js" defer></script>
+<script src="app.js" defer></script>
 </body>
 </html>

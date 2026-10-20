@@ -52,6 +52,8 @@ def main():
     hist = [h for h in hist if h["symbol"] != sym]
     hist.insert(0, {"q": q, "symbol": sym, "name": name, "asof": r["asof"], "added": add})
     lf.write_text(json.dumps(hist[:40], ensure_ascii=False, indent=0), encoding="utf-8")
+    from bundle import main as bundle_main
+    bundle_main()
     print(f"OK {sym} {name} asof {r['asof']} · " + " / ".join(r["sentences"][:2]))
 
 

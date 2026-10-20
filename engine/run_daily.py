@@ -63,6 +63,11 @@ def main():
         for fl in j.get('flags', []): md.append(f"  - ! {fl}")
     md.append("")
     (out / "summary.md").write_text("\n".join(md), encoding="utf-8")
+    try:
+        from bundle import main as bundle_main
+        bundle_main()
+    except Exception as e:
+        print("bundle fail", e)
     print("\n".join(md))
 
 if __name__ == "__main__":

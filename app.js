@@ -67,8 +67,8 @@ const term = (t, label = t) => `<span class="term" data-g="${t}">${label}</span>
 
 /* ------------------------------------------------------------ 데이터 */
 const cache = {};
-async function j(url) { if (url in cache) return cache[url]; try { const res = await fetch(url, { cache: 'no-store' }); cache[url] = res.ok ? await res.json() : null; } catch { cache[url] = null; } return cache[url]; }
-async function t(url) { try { const res = await fetch(url, { cache: 'no-store' }); return res.ok ? await res.text() : ''; } catch { return ''; } }
+async function j(url) { if (url in cache) return cache[url]; try { const res = await fetch(url); cache[url] = res.ok ? await res.json() : null; } catch { cache[url] = null; } return cache[url]; }
+async function t(url) { try { const res = await fetch(url); return res.ok ? await res.text() : ''; } catch { return ''; } }
 async function loadWatchlist() { return (await t('watchlist.txt')).split('\n').map(s => s.trim()).filter(s => s && !s.startsWith('#')); }
 async function loadCsv(sym) {
   const txt = await t(`data/${sym}.csv`); if (!txt) return [];
@@ -176,12 +176,17 @@ function chip(jd) {
 /* ------------------------------------------------------------ 데스크 */
 async function renderDesk() {
   setNav('desk'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const [syms, J, A, AL, EV, TR, FL] = await Promise.all([loadWatchlist(), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/track.json'), j('out/flows.json')]);
-  const items = (await Promise.all(syms.map(async s => ({ s, r: await j(`out/${s}.json`), rows: await loadCsv(s) })))).filter(x => x.r);
+  // 묶음 파일 하나로 (없으면 예전처럼 하나씩)
+  const D = await j('out/desk.json');
+  if (D) Object.entries(D.files).forEach(([k, v]) => { if (/^out\/[^/]+\.json$/.test(k) && !['out/track.json', 'out/flows.json'].includes(k)) cache[k] = v; });
+  const g = p => D?.files?.[p] !== undefined ? D.files[p] : j(p);
+  const csvOf = s => D?.csv?.[s] ? D.csv[s] : loadCsv(s);
+  const [syms, J, A, AL, EV, TR, FL] = await Promise.all([D ? D.watchlist : loadWatchlist(), g('out/judgement.json'), g('out/attribution.json'), g('out/alerts.json'), g('events.json'), g('out/track.json'), g('out/flows.json')]);
+  const items = (await Promise.all(syms.map(async s => ({ s, r: await g(`out/${s}.json`), rows: await csvOf(s) })))).filter(x => x.r);
   const ctx = [['^KS11', '코스피'], ['^KQ11', '코스닥'], ['^GSPC', 'S&P 500'], ['^VIX', 'VIX 공포지수']];
-  const sect = await Promise.all([['SOXX', '반도체 ETF'], ['IONQ', '아이온큐'], ['RGTI', '리게티'], ['QBTS', '디웨이브']].map(async ([s, n]) => ({ s, n, rows: await loadCsv(s) })));
+  const sect = await Promise.all([['SOXX', '반도체 ETF'], ['IONQ', '아이온큐'], ['RGTI', '리게티'], ['QBTS', '디웨이브']].map(async ([s, n]) => ({ s, n, rows: await csvOf(s) })));
   const sectH = sect.filter(m => m.rows.length > 2).map(m => { const l = m.rows[m.rows.length - 1], p = m.rows[m.rows.length - 2]; const ch = pct(l.close, p.close); return `<span class="sc"><b>${m.n}</b> <span class="mono ${cls(ch)}">${sgn(ch)}</span></span>`; }).join('');
-  const mk = await Promise.all(ctx.map(async ([s, n]) => ({ s, n, rows: await loadCsv(s) })));
+  const mk = await Promise.all(ctx.map(async ([s, n]) => ({ s, n, rows: await csvOf(s) })));
   const mkt = mk.filter(m => m.rows.length > 2).map(m => {
     const last = m.rows[m.rows.length - 1], prev = m.rows[m.rows.length - 2];
     const chg = pct(last.close, prev.close);
@@ -693,4 +698,16 @@ function route() {
 }
 window.addEventListener('hashchange', route);
 route();
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+  // 뒤에서 새 데이터가 도착하면 조용히 다시 그림 (스크롤 위치 유지)
+  let pend = null;
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type !== 'updated') return;
+    clearTimeout(pend); pend = setTimeout(() => {
+      Object.keys(cache).forEach(k => delete cache[k]);
+      const y = window.scrollY; const h = location.hash;
+      Promise.resolve(route()).then(() => { if (location.hash === h) window.scrollTo(0, y); });
+    }, 600);
+  });
+}
