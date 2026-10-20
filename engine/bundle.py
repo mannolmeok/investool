@@ -47,6 +47,13 @@ def main():
     csv = {s: tail_csv(s) for s in wl + CTX}
     asof = max((v.get("asof", "") for k, v in files.items() if k.startswith("out/") and isinstance(v, dict) and "asof" in v), default="")
     out = {"asof": asof, "watchlist": wl, "files": files, "csv": csv}
+    # 종목명 사전: 포지션 이름 + 스크리너 + 검색 기록 → out/names.json (스크리너·검색으로 들어간 종목도 이름으로 보이게)
+    names = dict((rd("positions.json") or {}).get("names", {}))
+    for r in (rd("out/screener.json") or {}).get("rows", []):
+        if r.get("symbol"): names.setdefault(r["symbol"], r["name"])
+    for r in (rd("out/lookup.json") or []):
+        if r.get("symbol"): names.setdefault(r["symbol"], r["name"])
+    (OUT / "names.json").write_text(json.dumps(names, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     (OUT / "desk.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":"), default=float), encoding="utf-8")
     print(f"desk.json {len(json.dumps(out, ensure_ascii=False, default=float))//1024}KB · 파일 {len(files)} · csv {len(csv)}")
 

@@ -76,6 +76,8 @@ async function loadCsv(sym) {
 }
 const sma = (rows, w) => rows.map((r, i) => i < w - 1 ? null : { time: r.time, value: rows.slice(i - w + 1, i + 1).reduce((a, b) => a + b.close, 0) / w }).filter(Boolean);
 const NAMES = { 'INFQ': '인플렉션', '005930.KS': '삼성전자', '000660.KS': 'SK하이닉스', '013030.KQ': '하이록코리아', '054950.KQ': '제이브이엠', '236200.KQ': '슈프리마', '036800.KQ': '나이스정보통신', '200670.KQ': '휴메딕스', '015230.KS': '대창단조', '044960.KQ': '이글벳', '^KS11': '코스피', '^KQ11': '코스닥', '^GSPC': 'S&P 500', '^VIX': 'VIX', 'SOXX': '반도체 ETF', 'IONQ': '아이온큐', 'RGTI': '리게티', 'QBTS': '디웨이브' };
+// 종목명 사전(배치가 만든 names.json) — 스크리너·검색으로 들어간 종목도 이름으로
+const NAMES_READY = fetch('out/names.json').then(r => r.ok ? r.json() : {}).then(m => { for (const [k, v] of Object.entries(m || {})) if (!NAMES[k]) NAMES[k] = v; }).catch(() => { });
 const nameOf = (s, J) => (J && J[s] && J[s].name && J[s].name !== s ? J[s].name : null) || NAMES[s] || (() => { try { return JSON.parse(LS.get('names') || '{}')[s]; } catch { return null; } })() || s;
 
 /* ------------------------------------------------------------ 시각 컴포넌트 */
@@ -510,7 +512,7 @@ async function renderTrack() {
 /* ------------------------------------------------------------ 종목 페이지 */
 async function renderTicker(sym, ov = null) {
   setNav('desk'); if (!ov) main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  let [r, rows, J, A, AL, EV, FL, MT] = await Promise.all([j(`out/${sym}.json`), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/flows.json'), j('out/mtf.json')]);
+  let [r, rows, J, A, AL, EV, FL, MT] = await Promise.all([NAMES_READY.then(() => j(`out/${sym}.json`)), loadCsv(sym), j('out/judgement.json'), j('out/attribution.json'), j('out/alerts.json'), j('events.json'), j('out/flows.json'), j('out/mtf.json')]);
   if (!r && !ov) {
     main.innerHTML = `<div class="bar"><a href="#/" class="back">‹</a><h1 class="lgrow">${logo(sym, nameOf(sym, J), 30)}${esc(nameOf(sym, J))}</h1></div><div class="mut" style="padding:20px">데이터 받아서 선 긋는 중… (1~2초)</div>`;
     const b = await lvBundle(sym);
@@ -745,6 +747,7 @@ async function renderScreener() {
     <div class="mut mono" id="scrN" style="font-size:11px"></div>
     <div class="sc2-l" id="scrL"></div>
     <section><header><span>읽는 법</span></header><div class="sent"><div>· <b class="ok">이익</b> 막대가 길고 <b>주가</b> 막대가 짧을수록 "번 만큼 안 오른" 종목.</div><div>· 오른쪽 작은 기둥 4개 = 점수 구성(싸다 30 · 신고점 25 · 미반영 25 · 성장 20).</div><div>· <b class="ok">★ 깨어남</b> = 최근 20일·5일 모두 외국인+기관 순매수. ★ 상위 7개(지배구조 주의 제외, 시총 5천억↑)는 매주 관심 종목에 자동으로 들어가요.</div><div>· <b class="warn">⚠ 지배구조</b> = 이름·업종상 지주사이거나, 최근 4분기 연결 순이익 중 <b>비지배지분(자회사의 다른 주주 몫)</b>이 30% 이상. 상장 자회사가 많을수록 커져서 지주사·중복상장 할인의 신호예요.</div><div>· 기준 출처: 워뇨띠 Q&A — "저평가를 먼저, 그다음 차트" · "매출·영업이익이 신고점을 돌파하는 종목" · "몇 년 안에 주목받을 애들" · "지분구조 난해·분할상장 남발·실적 조작이 아니면".</div><div>· DART(금융감독원) 확인: 최근 3년 회사분할 결정 2번↑ = 남발 ⚠ · 1번 = 참고 표시 · 상장 자회사 2개↑ ⚠ · 감사의견 비적정 ⚠ · 최대주주+특수관계인 지분은 참고로 표시.</div><div class="mut">· 매수 추천이 아니라 볼 종목 목록이에요.</div></div></section>`;
+  SC.rows.forEach(r => { if (r.symbol && !NAMES[r.symbol]) NAMES[r.symbol] = r.name; });
   const draw = () => {
     LS.set('scrF', JSON.stringify(F));
     let L = SC.rows.filter(r => (F.cap === 'all' || (F.cap === 's' ? r.cap < 10000 : F.cap === 'm' ? r.cap >= 10000 && r.cap < 50000 : r.cap >= 50000))
