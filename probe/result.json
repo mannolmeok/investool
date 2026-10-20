@@ -1,123 +1,94 @@
 {
- "trend60": 60,
- "trend120": "<HTTPError 400: '400'>",
- "267250": {
-  "name": "HD현대",
-  "desc": "",
-  "industryCode": "291",
-  "지배": {
-   "202509": 1746.0,
-   "202609": null,
-   "202606": 13311.0,
-   "202506": 1212.0,
-   "202603": 7812.0,
-   "202512": 4477.0
-  },
-  "비지배": {
-   "202509": 8123.0,
-   "202609": null,
-   "202606": 18420.0,
-   "202506": 3667.0,
-   "202603": 12419.0,
-   "202512": 9755.0
-  },
-  "순이익": {
-   "202509": 9869.0,
-   "202609": 12890.0,
-   "202606": 31731.0,
-   "202506": 4880.0,
-   "202603": 20230.0,
-   "202512": 14232.0
-  }
+ "key_set": true,
+ "key_len": 40,
+ "corp_codes": 3999,
+ "HD현대": {
+  "flags": [
+   "상장 자회사 2개"
+  ],
+  "splits": [],
+  "major_pct": 37.19,
+  "report_year": 2025,
+  "audit": "적정의견",
+  "listed_subs": [
+   "HD한국조선해양",
+   "HD현대일렉트릭"
+  ]
  },
- "000880": {
-  "name": "한화",
-  "desc": "",
-  "industryCode": "276",
-  "지배": {
-   "202509": 3654.0,
-   "202609": null,
-   "202606": 4407.0,
-   "202506": 729.0,
-   "202603": 1449.0,
-   "202512": -1532.0
-  },
-  "비지배": {
-   "202509": 6604.0,
-   "202609": null,
-   "202606": 13804.0,
-   "202506": 1960.0,
-   "202603": 6309.0,
-   "202512": 3846.0
-  },
-  "순이익": {
-   "202509": 10258.0,
-   "202609": null,
-   "202606": 18211.0,
-   "202506": 2689.0,
-   "202603": 7758.0,
-   "202512": 2314.0
-  }
+ "한화": {
+  "flags": [
+   "최근 3년 분할 결정 7건"
+  ],
+  "splits": [
+   {
+    "date": "20260514",
+    "title": "[기재정정]주요사항보고서(회사분할결정)"
+   },
+   {
+    "date": "20260421",
+    "title": "[기재정정]주요사항보고서(회사분할결정)"
+   },
+   {
+    "date": "20260311",
+    "title": "[기재정정]주요사항보고서(회사분할결정)"
+   },
+   {
+    "date": "20260114",
+    "title": "주요사항보고서(회사분할결정)"
+   },
+   {
+    "date": "20240618",
+    "title": "[기재정정]주요사항보고서(회사분할결정)"
+   },
+   {
+    "date": "20240513",
+    "title": "[기재정정]주요사항보고서(회사분할결정)"
+   },
+   {
+    "date": "20240403",
+    "title": "주요사항보고서(회사분할결정)"
+   }
+  ],
+  "major_pct": 55.84,
+  "report_year": 2025,
+  "audit": "적정의견",
+  "listed_subs": [
+   "한화에어로스페이스"
+  ]
  },
- "003550": {
-  "name": "LG",
-  "desc": "",
-  "industryCode": "276",
-  "지배": {
-   "202509": 3153.0,
-   "202609": null,
-   "202606": 4657.0,
-   "202506": 2046.0,
-   "202603": 3398.0,
-   "202512": -3629.0
-  },
-  "비지배": {
-   "202509": 581.0,
-   "202609": null,
-   "202606": 682.0,
-   "202506": 396.0,
-   "202603": 391.0,
-   "202512": 1370.0
-  },
-  "순이익": {
-   "202509": 3734.0,
-   "202609": 3755.0,
-   "202606": 5338.0,
-   "202506": 2442.0,
-   "202603": 3790.0,
-   "202512": -2259.0
-  }
+ "LG화학": {
+  "flags": [],
+  "splits": [],
+  "major_pct": 31.54,
+  "report_year": 2025,
+  "audit": "적정의견",
+  "listed_subs": []
  },
- "000270": {
-  "name": "기아",
-  "desc": "",
-  "industryCode": "273",
-  "지배": {
-   "202509": 14248.0,
-   "202609": null,
-   "202606": 23276.0,
-   "202506": 22688.0,
-   "202603": 18314.0,
-   "202512": 14743.0
-  },
-  "비지배": {
-   "202509": -24.0,
-   "202609": null,
-   "202606": 1.0,
-   "202506": -6.0,
-   "202603": -12.0,
-   "202512": -34.0
-  },
-  "순이익": {
-   "202509": 14225.0,
-   "202609": 20584.0,
-   "202606": 23277.0,
-   "202506": 22682.0,
-   "202603": 18302.0,
-   "202512": 14709.0
-  }
+ "파마리서치": {
+  "flags": [
+   "최근 3년 분할 결정 2건"
+  ],
+  "splits": [
+   {
+    "date": "20250708",
+    "title": "[기재정정]주요사항보고서(회사분할결정)"
+   },
+   {
+    "date": "20250613",
+    "title": "주요사항보고서(회사분할결정)"
+   }
+  ],
+  "major_pct": 31.37,
+  "report_year": 2025,
+  "audit": "적정의견",
+  "listed_subs": []
  },
- "industry_name": "{'stockListSortType': 'INDUSTRY', 'stocks': [{'stockType': 'domestic', 'stockEndType': 'stock', 'itemCode': '000040', 'reutersCode': '000040', 'stockName': 'KR모터스', 'sosok': '0', 'closePrice': '1,289', 'compareToPreviousClosePrice': '297', 'compareToPreviousPrice': {'code': '1', 'text': '상한', 'name'",
- "/api/stocks/industry": "{'stockListSortType': 'INDUSTRY', 'groups': [{'no': 293, 'name': '컴퓨터와주변기기', 'totalCount': 21, 'changeRate': '0.35', 'riseCount': 5, 'fallCount': 12, 'steadyCount': 4}, {'no': 336, 'name': '다각화된통신서비스', 'totalCount': 3, 'changeRate': '0.24', 'riseCount': 2, 'fallCount': 0, 'steadyCount': 1}, {'no': 275, 'name': '담배', 'totalCount': 1, 'changeRate': '0.05', 'riseCount': 1, 'fallCount': 0, 'steadyCount': 0}, {'no': 296, 'name': '운송인프라', 'totalCount': 8, 'changeRate': '-0.19', 'riseCount': 1, 'fallCount': 6, 'steadyCount': 1}, {'no': 337, 'name': '카드', 'totalCount': 1, 'changeRate': '-0.23', 'riseC",
- "/api/stock/267250/basic": "{'stockEndType': 'stock', 'itemCode': '267250', 'reutersCode': '267250', 'stockName': 'HD현대', 'itemLogoUrl': 'https://ssl.pstatic.net/imgstock/fn/real/logo/stock/Stock267250.svg', 'itemLogoPngUrl': 'https://ssl.pstatic.net/imgstock/fn/real/logo/png/stock/Stock267250.png', 'sosok': '0', 'closePrice': '150,100', 'compareToPreviousClosePrice': '-9,300', 'compareToPreviousPrice': {'code': '5', 'text': '하락', 'name': 'FALLING'}, 'fluctuationsRatio': '-5.83', 'marketStatus': 'OPEN', 'marketStatusDetailType': 'open', 'localTradedAt': '2026-10-20T10:24:22+09:00', 'tradeStopType': {'code': '1', 'text': "
+ "키움증권": {
+  "flags": [],
+  "splits": [],
+  "major_pct": 41.59,
+  "report_year": 2025,
+  "audit": "적정의견",
+  "listed_subs": []
+ }
 }
