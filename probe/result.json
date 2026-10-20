@@ -1,0 +1,20 @@
+{
+ "krx_fund": "FAIL IndexError('index -1 is out of bounds for axis 0 with size 0')",
+ "krx_cap": "FAIL IndexError('index -1 is out of bounds for axis 0 with size 0')",
+ "krx_fund_1y": "FAIL KeyError(\"None of [Index(['BPS', 'PER', 'PBR', 'EPS', 'DIV', 'DPS'], dtype='object')] are in the [columns]\")",
+ "krx_inv": "FAIL IndexError('index -1 is out of bounds for axis 0 with size 0')",
+ "krx_inv_ticker": {
+  "rows": 0,
+  "cols": []
+ },
+ "krx_names": "FAIL IndexError('index -1 is out of bounds for axis 0 with size 0')",
+ "naver_sum": {
+  "len": 130028,
+  "has_table": false
+ },
+ "naver_main": {
+  "len": 130388,
+  "has_fin": false
+ },
+ "yahoo_search": "FAIL <HTTPError 400: 'Bad Request'>"
+}
