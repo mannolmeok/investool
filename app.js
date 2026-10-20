@@ -802,7 +802,10 @@ function route() {
 window.addEventListener('hashchange', route);
 route();
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js').then(reg => reg.update()).catch(() => {});
+  // 새 버전 앱이 설치되면 한 번만 자동 새로고침 (예전 화면이 남지 않게)
+  const hadCtl = !!navigator.serviceWorker.controller; let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadCtl && !reloaded) { reloaded = true; location.reload(); } });
   // 뒤에서 새 데이터가 도착하면 조용히 다시 그림 (스크롤 위치 유지)
   let pend = null;
   navigator.serviceWorker.addEventListener('message', e => {
