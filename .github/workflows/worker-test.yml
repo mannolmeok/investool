@@ -1,0 +1,14 @@
+name: worker-test
+on: { workflow_dispatch: {} }
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: cd worker && cp quote.js quote.mjs && sed -i 's#./quote.js#./quote.mjs#' test.mjs && node test.mjs | tee result.txt
+      - run: |
+          git config user.name investool-bot; git config user.email bot@investool
+          git add -f worker/result.txt; git commit -m "worker test" || exit 0; git pull --rebase && git push
+    permissions: { contents: write }
