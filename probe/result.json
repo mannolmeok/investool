@@ -1,13 +1,394 @@
 {
- "mkt_rank": "{\"ok\": true, \"json\": {\"stockListSortType\": \"MARKET_VALUE\", \"stockListCategoryType\": \"KOSPI\", \"stocks\": [{\"stockType\": \"domestic\", \"stockEndType\": \"stock\", \"itemCode\": \"005930\", \"reutersCode\": \"005930\", \"stockName\": \"삼성전자\", \"sosok\": \"0\", \"closePrice\": \"215,000\", \"compareToPreviousClosePrice\": \"-3,000\", \"compareToPreviousPrice\": {\"code\": \"5\", \"text\": \"하락\", \"name\": \"FALLING\"}, \"fluctuationsRatio\": \"-1.38\", \"accumulatedTradingVolume\": \"2,948,174\", \"accumulatedTradingValue\": \"637,649\", \"accumulatedTradingValueKrwHangeul\": \"6,376억원\", \"localTradedAt\": \"2026-10-20T09:40:00+09:00\", \"marketValue\": \"12,569,499\", \"marketValueHangeul\": \"1,256조 9,499억원\", \"nav\": \"N/A\", \"threeMonthEarningRate\": \"N/A\", \"marketStatus\": \"OPEN\", \"tradeStopType\": {\"code\": \"1\", \"text\": \"운영.Trading\", \"name\": \"TRADING\"}, \"tradableStatus\": \"tradable\", \"tradableStatusCode\": \"ok\", \"tradableStatusUpdatedAt\": \"2026-10-20T08:01:45.511+09:00\", \"stockExchangeType\": {\"code\": \"KS\", \"zoneId\": \"Asia/Seoul\", \"nationType\": \"KOR\", \"delayTime\": 0, \"startTime\": \"0900\", \"endTime\": \"1530\", \"closePriceSendTime\": \"1630\", \"nameKor\": \"코스피\", \"nameEng\": \"KOSPI\", \"stockType\": \"domestic\", \"nationCode\": \"KOR\", \"nationName\": \"대한민국\", \"name\": \"KOSPI\"}, \"endUrl\": \"https://m.stock.naver.com/domestic/stock/005930\", \"newPcUrl\": \"https://stock.naver.com/domestic/stock/005930\", \"overMarketPriceInfo\": {\"tradingSessionType\": \"REGULAR_MARKET\", \"overMarketStatus\": \"OPEN\", \"overPrice\": \"215,000\", \"compareToPreviousPrice\": {\"code\": \"5\", \"text\": \"하락\", \"name\":",
- "integration": "{\"ok\": true, \"json\": {\"stockEndType\": \"stock\", \"itemCode\": \"005930\", \"reutersCode\": \"005930\", \"stockName\": \"삼성전자\", \"totalInfos\": [{\"code\": \"lastClosePrice\", \"key\": \"전일\", \"value\": \"218,000\"}, {\"code\": \"openPrice\", \"key\": \"시가\", \"value\": \"222,500\", \"compareToPreviousPrice\": {\"code\": \"2\", \"text\": \"상승\", \"name\": \"RISING\"}}, {\"code\": \"highPrice\", \"key\": \"고가\", \"value\": \"223,000\", \"compareToPreviousPrice\": {\"code\": \"2\", \"text\": \"상승\", \"name\": \"RISING\"}}, {\"code\": \"lowPrice\", \"key\": \"저가\", \"value\": \"213,000\", \"compareToPreviousPrice\": {\"code\": \"5\", \"text\": \"하락\", \"name\": \"FALLING\"}}, {\"code\": \"accumulatedTradingVolume\", \"key\": \"거래량\", \"value\": \"6,515,892\"}, {\"code\": \"accumulatedTradingValue\", \"key\": \"대금\", \"value\": \"1조 4,169억\"}, {\"code\": \"marketValue\", \"key\": \"시총\", \"value\": \"1,261조 3,346억\"}, {\"code\": \"foreignRate\", \"key\": \"외인소진율\", \"value\": \"46.04%\"}, {\"code\": \"highPriceOf52Weeks\", \"key\": \"52주 최고\", \"value\": \"380,000\"}, {\"code\": \"lowPriceOf52Weeks\", \"key\": \"52주 최저\", \"value\": \"93,500\"}, {\"code\": \"per\", \"key\": \"PER\", \"value\": \"9.68배\", \"valueDesc\": \"2026.06.\"}, {\"code\": \"eps\", \"key\": \"EPS\", \"value\": \"22,292원\", \"valueDesc\": \"2026.06.\"}, {\"code\": \"cnsPer\", \"key\": \"추정PER\", \"value\": \"4.74배\"}, {\"code\": \"cnsEps\", \"key\": \"추정EPS\", \"value\": \"45,521원\"}, {\"code\": \"pbr\", \"key\": \"PBR\", \"value\": \"2.51배\", \"valueDesc\": \"2026.06.\"}, {\"code\": \"bps\", \"key\": \"BPS\", \"value\": \"86,052원\", \"valueDesc\": \"2026.06.\"}, {\"code\": \"dividendYieldRatio\", \"key\": \"배당수익률\", \"value\": \"0.77%\", \"valueDesc\": \"2025.12.\"}, {\"code\": \"divid",
- "basic": "{\"ok\": true, \"json\": {\"stockEndType\": \"stock\", \"itemCode\": \"005930\", \"reutersCode\": \"005930\", \"stockName\": \"삼성전자\", \"itemLogoUrl\": \"https://ssl.pstatic.net/imgstock/fn/real/logo/stock/Stock005930.svg\", \"itemLogoPngUrl\": \"https://ssl.pstatic.net/imgstock/fn/real/logo/png/stock/Stock005930.png\", \"sosok\": \"0\", \"closePrice\": \"215,750\", \"compareToPreviousClosePrice\": \"-2,250\", \"compareToPreviousPrice\": {\"code\": \"5\", \"text\": \"하락\", \"name\": \"FALLING\"}, \"fluctuationsRatio\": \"-1.03\", \"marketStatus\": \"OPEN\", \"marketStatusDetailType\": \"open\", \"localTradedAt\": \"2026-10-20T09:39:21+09:00\", \"tradeStopType\": {\"code\": \"1\", \"text\": \"운영.Trading\", \"name\": \"TRADING\"}, \"tradableStatus\": \"tradable\", \"tradableStatusCode\": \"ok\", \"tradableStatusUpdatedAt\": \"2026-10-20T08:01:45.511+09:00\", \"stockExchangeType\": {\"code\": \"KS\", \"zoneId\": \"Asia/Seoul\", \"nationType\": \"KOR\", \"delayTime\": 0, \"startTime\": \"0900\", \"endTime\": \"1530\", \"closePriceSendTime\": \"1630\", \"nameKor\": \"코스피\", \"nameEng\": \"KOSPI\", \"stockType\": \"domestic\", \"nationCode\": \"KOR\", \"nationName\": \"대한민국\", \"name\": \"KOSPI\"}, \"stockExchangeName\": \"KOSPI\", \"imageCharts\": {\"day_up\": \"https://financial-vn.pstatic.net/chart/mobile/mini/krx/005930_end_up.png\", \"day_up_tablet\": \"https://financial-vn.pstatic.net/chart/mobile/mini/krx/005930_end_up_tablet.png\", \"day\": \"https://financial-vn.pstatic.net/chart/mobile/day/krx/005930_end.png\", \"areaMonthThree\": \"https://financial-vn.pstatic.net/chart/mobile/area/month3/005930_end.png\", \"candleWeek\": \"https://financia",
- "fin_annual": "{\"ok\": true, \"json\": {\"itemCode\": \"005930\", \"financePeriodType\": \"annual\", \"financeInfo\": {\"itemCode\": \"005930\", \"trTitleList\": [{\"isConsensus\": \"N\", \"title\": \"2023.12.\", \"key\": \"202312\"}, {\"isConsensus\": \"N\", \"title\": \"2024.12.\", \"key\": \"202412\"}, {\"isConsensus\": \"N\", \"title\": \"2025.12.\", \"key\": \"202512\"}, {\"isConsensus\": \"Y\", \"title\": \"2026.12.\", \"key\": \"202612\"}], \"rowList\": [{\"title\": \"매출액\", \"columns\": {\"202512\": {\"value\": \"3,336,059\", \"cx\": null}, \"202612\": {\"value\": \"7,119,260\", \"cx\": null}, \"202312\": {\"value\": \"2,589,355\", \"cx\": null}, \"202412\": {\"value\": \"3,008,709\", \"cx\": null}}}, {\"title\": \"영업이익\", \"columns\": {\"202512\": {\"value\": \"436,011\", \"cx\": null}, \"202612\": {\"value\": \"3,716,389\", \"cx\": null}, \"202312\": {\"value\": \"65,670\", \"cx\": null}, \"202412\": {\"value\": \"327,260\", \"cx\": null}}}, {\"title\": \"당기순이익\", \"columns\": {\"202512\": {\"value\": \"452,068\", \"cx\": null}, \"202612\": {\"value\": \"3,070,143\", \"cx\": null}, \"202312\": {\"value\": \"154,871\", \"cx\": null}, \"202412\": {\"value\": \"344,514\", \"cx\": null}}}, {\"title\": \"지배주주순이익\", \"columns\": {\"202512\": {\"value\": \"442,610\", \"cx\": null}, \"202612\": {\"value\": \"-\", \"cx\": null}, \"202312\": {\"value\": \"144,734\", \"cx\": null}, \"202412\": {\"value\": \"336,214\", \"cx\": null}}}, {\"title\": \"비지배주주순이익\", \"columns\": {\"202512\": {\"value\": \"9,458\", \"cx\": null}, \"202612\": {\"value\": \"-\", \"cx\": null}, \"202312\": {\"value\": \"10,137\", \"cx\": null}, \"202412\": {\"value\": \"8,300\", \"cx\": null}}}, {\"title\": \"영업이익률\", \"columns\": {\"202512\": {\"value\": \"13.07\", \"cx\": null}, \"202",
- "fin_quarter": "{\"ok\": true, \"json\": {\"itemCode\": \"005930\", \"financePeriodType\": \"quarter\", \"financeInfo\": {\"itemCode\": \"005930\", \"trTitleList\": [{\"isConsensus\": \"N\", \"title\": \"2025.06.\", \"key\": \"202506\"}, {\"isConsensus\": \"N\", \"title\": \"2025.09.\", \"key\": \"202509\"}, {\"isConsensus\": \"N\", \"title\": \"2025.12.\", \"key\": \"202512\"}, {\"isConsensus\": \"N\", \"title\": \"2026.03.\", \"key\": \"202603\"}, {\"isConsensus\": \"N\", \"title\": \"2026.06.\", \"key\": \"202606\"}, {\"isConsensus\": \"Y\", \"title\": \"2026.09.\", \"key\": \"202609\"}], \"rowList\": [{\"title\": \"매출액\", \"columns\": {\"202509\": {\"value\": \"860,617\", \"cx\": null}, \"202609\": {\"value\": \"2,007,657\", \"cx\": null}, \"202606\": {\"value\": \"1,714,995\", \"cx\": null}, \"202506\": {\"value\": \"745,663\", \"cx\": null}, \"202603\": {\"value\": \"1,338,734\", \"cx\": null}, \"202512\": {\"value\": \"938,374\", \"cx\": null}}}, {\"title\": \"영업이익\", \"columns\": {\"202509\": {\"value\": \"121,661\", \"cx\": null}, \"202609\": {\"value\": \"1,069,435\", \"cx\": null}, \"202606\": {\"value\": \"894,924\", \"cx\": null}, \"202506\": {\"value\": \"46,761\", \"cx\": null}, \"202603\": {\"value\": \"572,328\", \"cx\": null}, \"202512\": {\"value\": \"200,737\", \"cx\": null}}}, {\"title\": \"당기순이익\", \"columns\": {\"202509\": {\"value\": \"122,257\", \"cx\": null}, \"202609\": {\"value\": \"883,532\", \"cx\": null}, \"202606\": {\"value\": \"716,245\", \"cx\": null}, \"202506\": {\"value\": \"51,164\", \"cx\": null}, \"202603\": {\"value\": \"472,253\", \"cx\": null}, \"202512\": {\"value\": \"196,417\", \"cx\": null}}}, {\"title\": \"지배주주순이익\", \"columns\": {\"202509\": {\"value\": \"120,065\", \"cx\": null}, \"202609\": {\"value\": \"-\", \"",
- "trend": "{\"ok\": true, \"json\": [{\"itemCode\": \"005930\", \"bizdate\": \"20261019\", \"foreignerPureBuyQuant\": \"+1,241,581\", \"foreignerHoldRatio\": \"46.04%\", \"organPureBuyQuant\": \"-42,900\", \"individualPureBuyQuant\": \"-880,224\", \"closePrice\": \"223,500\", \"compareToPreviousClosePrice\": \"8,000\", \"compareToPreviousPrice\": {\"code\": \"2\", \"text\": \"상승\", \"name\": \"RISING\"}, \"accumulatedTradingVolume\": \"17,617,415\"}, {\"itemCode\": \"005930\", \"bizdate\": \"20261016\", \"foreignerPureBuyQuant\": \"+906,438\", \"foreignerHoldRatio\": \"45.99%\", \"organPureBuyQuant\": \"-1,447,523\", \"individualPureBuyQuant\": \"-40,774\", \"closePrice\": \"217,000\", \"compareToPreviousClosePrice\": \"7,000\", \"compareToPreviousPrice\": {\"code\": \"2\", \"text\": \"상승\", \"name\": \"RISING\"}, \"accumulatedTradingVolume\": \"18,908,560\"}, {\"itemCode\": \"005930\", \"bizdate\": \"20261015\", \"foreignerPureBuyQuant\": \"-7,280,040\", \"foreignerHoldRatio\": \"45.98%\", \"organPureBuyQuant\": \"+2,391,459\", \"individualPureBuyQuant\": \"+4,658,533\", \"closePrice\": \"207,500\", \"compareToPreviousClosePrice\": \"-24,500\", \"compareToPreviousPrice\": {\"code\": \"5\", \"text\": \"하락\", \"name\": \"FALLING\"}, \"accumulatedTradingVolume\": \"34,330,565\"}, {\"itemCode\": \"005930\", \"bizdate\": \"20261014\", \"foreignerPureBuyQuant\": \"-829,758\", \"foreignerHoldRatio\": \"46.16%\", \"organPureBuyQuant\": \"+310,050\", \"individualPureBuyQuant\": \"+505,494\", \"closePrice\": \"234,500\", \"compareToPreviousClosePrice\": \"2,500\", \"compareToPreviousPrice\": {\"code\": \"2\", \"text\": \"상승\", \"name\": \"RISING\"}, \"accumulatedTradingVolume\": \"19,009,052\"},",
- "investor": "{\"ok\": false, \"err\": \"<HTTPError 404: '404'>\"}",
- "search": "{\"ok\": true, \"json\": {\"isSuccess\": true, \"detailCode\": \"\", \"message\": \"\", \"result\": {\"query\": \"한화에어로\", \"items\": [{\"code\": \"012450\", \"name\": \"한화에어로스페이스\", \"typeCode\": \"KOSPI\", \"typeName\": \"코스피\", \"url\": \"/domestic/stock/012450/total\", \"reutersCode\": \"012450\", \"nationCode\": \"KOR\", \"nationName\": \"대한민국\", \"category\": \"stock\", \"hasDiscussion\": true, \"isinCode\": null, \"isEtf\": false}]}}}",
- "industry": "{\"ok\": true, \"json\": {\"stockListSortType\": \"INDUSTRY\", \"stocks\": [{\"stockType\": \"domestic\", \"stockEndType\": \"stock\", \"itemCode\": \"089890\", \"reutersCode\": \"089890\", \"stockName\": \"코세스\", \"sosok\": \"1\", \"closePrice\": \"34,600\", \"compareToPreviousClosePrice\": \"3,100\", \"compareToPreviousPrice\": {\"code\": \"2\", \"text\": \"상승\", \"name\": \"RISING\"}, \"fluctuationsRatio\": \"9.84\", \"accumulatedTradingVolume\": \"186,622\", \"accumulatedTradingValue\": \"6,347\", \"localTradedAt\": \"2026-10-20T09:40:00+09:00\", \"marketValue\": \"5,738\", \"nav\": \"N/A\", \"threeMonthEarningRate\": \"N/A\", \"marketStatus\": \"OPEN\", \"tradeStopType\": {\"code\": \"1\", \"text\": \"운영.Trading\", \"name\": \"TRADING\"}, \"tradableStatus\": \"tradable\", \"tradableStatusCode\": \"ok\", \"tradableStatusUpdatedAt\": \"2026-10-20T08:02:17.521+09:00\", \"stockExchangeType\": {\"code\": \"KQ\", \"zoneId\": \"Asia/Seoul\", \"nationType\": \"KOR\", \"delayTime\": 0, \"startTime\": \"0900\", \"endTime\": \"1530\", \"closePriceSendTime\": \"1630\", \"nameKor\": \"코스닥\", \"nameEng\": \"KOSDAQ\", \"stockType\": \"domestic\", \"nationCode\": \"KOR\", \"nationName\": \"대한민국\", \"name\": \"KOSDAQ\"}, \"endUrl\": \"https://m.stock.naver.com/domestic/stock/089890\", \"newPcUrl\": \"https://stock.naver.com/domestic/stock/089890\", \"stockMiniImageChart\": \"https://financial-vn.pstatic.net/chart/mobile/mini/krx/089890_interest.png\", \"closePriceRaw\": \"34600\", \"compareToPreviousClosePriceRaw\": \"3100\", \"accumulatedTradingVolumeRaw\": \"186622\", \"accumulatedTradingValueRaw\": \"6347000000\", \"marketValueRaw\": \"573839685200\"}, {\"stockType\": \"domestic\", ",
- "yahoo_search": "{\"ok\": true, \"json\": {\"explains\": [], \"count\": 1, \"quotes\": [{\"exchange\": \"KSC\", \"shortname\": \"SamsungElec\", \"quoteType\": \"EQUITY\", \"symbol\": \"005930.KS\", \"index\": \"quotes\", \"score\": 14164500.0, \"typeDisp\": \"Equity\", \"longname\": \"Samsung Electronics Co., Ltd.\", \"exchDisp\": \"Korea\", \"sector\": \"Technology\", \"industry\": \"Consumer Electronics\", \"isYahooFinance\": true}], \"news\": [], \"nav\": [], \"lists\": [], \"researchReports\": [], \"screenerFieldResults\": [], \"totalTime\": 28, \"timeTakenForQuotes\": 412, \"timeTakenForNews\": 600, \"timeTakenForAlgowatchlist\": 400, \"timeTakenForPredefinedScreener\": 400, \"timeTakenForCrunchbase\": 0, \"timeTakenForNav\": 400, \"timeTakenForResearchReports\": 0, \"timeTakenForQuestions\": 0, \"timeTakenForScreenerField\": 0, \"timeTakenForCulturalAssets\": 0, \"timeTakenForSearchLists\": 0}}",
- "naver_pc_sum": "{\"ok\": true, \"text\": \"<!DOCTYPE html><html lang=\\\"ko\\\" translate=\\\"no\\\"><head><meta charSet=\\\"utf-8\\\"/><meta charSet=\\\"utf-8\\\"/><meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no,interactive-widget=resizes-content\\\"/><script async=\\\"\\\" src=\\\"https://ssl.pstatic.net/tveta/libs/glad/prod/gfp-core.js\\\"></script><meta name=\\\"description\\\" content=\\\"실시간 시세부터 차트·뉴스·토론까지, 네이버페이 증권에서 한눈에\\\"/><meta property=\\\"og:url\\\" content=\\\"https://m.stock.naver.com/domestic/home/capitalization/total\\\"/><meta property=\\\"og:title\\\" conte\"}"
+ "q_titles": [
+  "매출액",
+  "영업이익",
+  "당기순이익",
+  "지배주주순이익",
+  "비지배주주순이익",
+  "영업이익률",
+  "순이익률",
+  "ROE",
+  "부채비율",
+  "당좌비율",
+  "유보율",
+  "EPS",
+  "PER",
+  "BPS",
+  "PBR",
+  "주당배당금"
+ ],
+ "q_periods": [
+  {
+   "isConsensus": "N",
+   "title": "2025.06.",
+   "key": "202506"
+  },
+  {
+   "isConsensus": "N",
+   "title": "2025.09.",
+   "key": "202509"
+  },
+  {
+   "isConsensus": "N",
+   "title": "2025.12.",
+   "key": "202512"
+  },
+  {
+   "isConsensus": "N",
+   "title": "2026.03.",
+   "key": "202603"
+  },
+  {
+   "isConsensus": "N",
+   "title": "2026.06.",
+   "key": "202606"
+  },
+  {
+   "isConsensus": "Y",
+   "title": "2026.09.",
+   "key": "202609"
+  }
+ ],
+ "q_sample": [
+  {
+   "title": "매출액",
+   "columns": {
+    "202509": {
+     "value": "286,860",
+     "cx": null
+    },
+    "202609": {
+     "value": "319,148",
+     "cx": null
+    },
+    "202606": {
+     "value": "330,371",
+     "cx": null
+    },
+    "202506": {
+     "value": "293,496",
+     "cx": null
+    },
+    "202603": {
+     "value": "295,019",
+     "cx": null
+    },
+    "202512": {
+     "value": "280,877",
+     "cx": null
+    }
+   }
+  },
+  {
+   "title": "영업이익",
+   "columns": {
+    "202509": {
+     "value": "14,623",
+     "cx": null
+    },
+    "202609": {
+     "value": "24,087",
+     "cx": null
+    },
+    "202606": {
+     "value": "26,286",
+     "cx": null
+    },
+    "202506": {
+     "value": "27,648",
+     "cx": null
+    },
+    "202603": {
+     "value": "22,051",
+     "cx": null
+    },
+    "202512": {
+     "value": "18,425",
+     "cx": null
+    }
+   }
+  },
+  {
+   "title": "당기순이익",
+   "columns": {
+    "202509": {
+     "value": "14,225",
+     "cx": null
+    },
+    "202609": {
+     "value": "20,584",
+     "cx": null
+    },
+    "202606": {
+     "value": "23,277",
+     "cx": null
+    },
+    "202506": {
+     "value": "22,682",
+     "cx": null
+    },
+    "202603": {
+     "value": "18,302",
+     "cx": null
+    },
+    "202512": {
+     "value": "14,709",
+     "cx": null
+    }
+   }
+  }
+ ],
+ "a_titles": [
+  "매출액",
+  "영업이익",
+  "당기순이익",
+  "지배주주순이익",
+  "비지배주주순이익",
+  "영업이익률",
+  "순이익률",
+  "ROE",
+  "부채비율",
+  "당좌비율",
+  "유보율",
+  "EPS",
+  "PER",
+  "BPS",
+  "PBR",
+  "주당배당금"
+ ],
+ "int_keys": [
+  "stockEndType",
+  "itemCode",
+  "reutersCode",
+  "stockName",
+  "totalInfos",
+  "iconInfos",
+  "description",
+  "etfKeyIndicator",
+  "dealTrendInfos",
+  "researches",
+  "industryCode",
+  "industryCompareInfo",
+  "consensusInfo",
+  "shareholdersMeetingInfo",
+  "irScheduleInfo"
+ ],
+ "int_total": [
+  [
+   "lastClosePrice",
+   "전일",
+   "116,000"
+  ],
+  [
+   "openPrice",
+   "시가",
+   "114,600"
+  ],
+  [
+   "highPrice",
+   "고가",
+   "116,400"
+  ],
+  [
+   "lowPrice",
+   "저가",
+   "113,000"
+  ],
+  [
+   "accumulatedTradingVolume",
+   "거래량",
+   "149,424"
+  ],
+  [
+   "accumulatedTradingValue",
+   "대금",
+   "171억"
+  ],
+  [
+   "marketValue",
+   "시총",
+   "44조 1,948억"
+  ],
+  [
+   "foreignRate",
+   "외인소진율",
+   "39.13%"
+  ],
+  [
+   "highPriceOf52Weeks",
+   "52주 최고",
+   "212,500"
+  ],
+  [
+   "lowPriceOf52Weeks",
+   "52주 최저",
+   "102,600"
+  ],
+  [
+   "per",
+   "PER",
+   "6.29배"
+  ],
+  [
+   "eps",
+   "EPS",
+   "18,004원"
+  ],
+  [
+   "cnsPer",
+   "추정PER",
+   "5.48배"
+  ],
+  [
+   "cnsEps",
+   "추정EPS",
+   "20,673원"
+  ],
+  [
+   "pbr",
+   "PBR",
+   "0.68배"
+  ],
+  [
+   "bps",
+   "BPS",
+   "166,439원"
+  ],
+  [
+   "dividendYieldRatio",
+   "배당수익률",
+   "6.01%"
+  ],
+  [
+   "dividend",
+   "주당배당금",
+   "6,800원"
+  ]
+ ],
+ "int_industry": [
+  "273",
+  [
+   {
+    "stockType": "domestic",
+    "stockEndType": "stock",
+    "itemCode": "005380",
+    "reutersCode": "005380",
+    "stockName": "현대차",
+    "sosok": "0",
+    "closePrice": "316,000",
+    "compareToPreviousClosePrice": "-10,000",
+    "compareToPreviousPrice": {
+     "code": "5",
+     "text": "하락",
+     "name": "FALLING"
+    },
+    "fluctuationsRatio": "-3.07",
+    "accumulatedTradingVolume": "-",
+    "accumulatedTradingValue": "-",
+    "marketValue": "64,295,411",
+    "nav": "N/A",
+    "threeMonthEarningRate": "N/A",
+    "stockExchangeType": {
+     "code": "KS",
+     "zoneId": "Asia/Seoul",
+     "nationType": "KOR",
+     "delayTime": 0,
+     "startTime": "0900",
+     "endTime": "1530",
+     "closePriceSendTime": "1630",
+     "nameKor": "코스피",
+     "nameEng": "KOSPI",
+     "stockType": "domestic",
+     "nationCode": "KOR",
+     "nationName": "대한민국",
+     "name": "KOSPI"
+    },
+    "endUrl": "https://m.stock.naver.com/domestic/stock/005380",
+    "newPcUrl": "https://stock.naver.com/domestic/stock/005380"
+   },
+   {
+    "stockType": "domestic",
+    "stockEndType": "stock",
+    "itemCode": "003620",
+    "reutersCode": "003620",
+    "stockName": "KG모빌리티",
+    "sosok": "0",
+    "closePrice": "2,600",
+    "compareToPreviousClosePrice": "-20",
+    "compareToPreviousPrice": {
+     "code": "5",
+     "text": "하락",
+     "name": "FALLING"
+    },
+    "fluctuationsRatio": "-0.76",
+    "accumulatedTradingVolume": "-",
+    "accumulatedTradingValue": "-",
+    "marketValue": "526,174",
+    "nav": "N/A",
+    "threeMonthEarningRate": "N/A",
+    "stockExchangeType": {
+     "code": "KS",
+     "zoneId": "Asia/Seoul",
+     "nationType": "KOR",
+     "delayTime": 0,
+     "startTime": "0900",
+     "endTime": "1530",
+     "closePriceSendTime": "1630",
+     "nameKor": "코스피",
+     "nameEng": "KOSPI",
+     "stockType": "domestic",
+     "nationCode": "KOR",
+     "nationName": "대한민국",
+     "name": "KOSPI"
+    },
+    "endUrl": "https://m.stock.naver.com/domestic/stock/003620",
+    "newPcUrl": "https://stock.naver.com/domestic/stock/003620"
+   }
+  ]
+ ],
+ "int_consensus": "{'itemCode': '000270', 'createDate': '2026-10-19', 'recommMean': '4.00', 'priceTargetMean': '188,000'}",
+ "rank_n": 100,
+ "rank_total": 1822,
+ "rank_keys": [
+  "stockType",
+  "stockEndType",
+  "itemCode",
+  "reutersCode",
+  "stockName",
+  "sosok",
+  "closePrice",
+  "compareToPreviousClosePrice",
+  "compareToPreviousPrice",
+  "fluctuationsRatio",
+  "accumulatedTradingVolume",
+  "accumulatedTradingValue",
+  "accumulatedTradingValueKrwHangeul",
+  "localTradedAt",
+  "marketValue",
+  "marketValueHangeul",
+  "nav",
+  "threeMonthEarningRate",
+  "marketStatus",
+  "tradeStopType",
+  "tradableStatus",
+  "tradableStatusCode",
+  "tradableStatusUpdatedAt",
+  "stockExchangeType",
+  "endUrl",
+  "newPcUrl",
+  "overMarketPriceInfo",
+  "stockMiniImageChart",
+  "itemLogoUrl",
+  "itemLogoPngUrl",
+  "closePriceRaw",
+  "compareToPreviousClosePriceRaw",
+  "accumulatedTradingVolumeRaw",
+  "accumulatedTradingValueRaw",
+  "marketValueRaw"
+ ],
+ "rank_last": {
+  "stockName": "RF머트리얼즈",
+  "marketValue": "7,968",
+  "accumulatedTradingValue": "4,328"
+ }
 }
