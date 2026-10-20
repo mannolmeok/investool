@@ -86,7 +86,7 @@ function sparkline(vals, color, w = 90, h = 28) {
   return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;max-width:${w}px;height:${h}px;display:block" aria-hidden="true"><polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}"/></svg>`;
 }
 /* 가로 레벨 바: 손절/지지 ← 현재 → 추세선/목표 */
-function levelBar(items, close, krw) {
+function levelBar(items, close, krw, sym = '') {
   const ps = items.map(i => i.price).concat([close]);
   let mn = Math.min(...ps), mx = Math.max(...ps); const pad = (mx - mn) * 0.12 || close * 0.02; mn -= pad; mx += pad;
   const x = p => (p - mn) / (mx - mn) * 100;
@@ -97,7 +97,7 @@ function levelBar(items, close, krw) {
     const xi = x(i.price); side = (xi - lastX < 14) ? 1 - side : 0; lastX = xi;
     return `<div class="lb-mark ${side ? 'alt' : ''}" style="left:${xi.toFixed(1)}%;--c:${i.color}"><i></i><b>${esc(i.label)}</b><span class="mono">${fmtP(i.price, krw)}</span></div>`;
   }).join('');
-  return `<div class="lb"><div class="lb-track"></div>${marks}<div class="lb-now" style="left:${x(close).toFixed(1)}%"><i></i></div></div>`;
+  return `<div class="lb" ${sym ? `data-live-bar="${esc(sym)}" data-mn="${mn}" data-mx="${mx}"` : ''}><div class="lb-track"></div>${marks}<div class="lb-now" style="left:${x(close).toFixed(1)}%"><i></i></div></div>`;
 }
 /* 3구간 바 (판단 보드) */
 function zoneBar(stop, top, close, krw, labels = ['정리', '보유 · 추가 매수 금지', '돌파 → 다음 차수']) {
@@ -208,8 +208,8 @@ async function renderDesk() {
     trs.push({ s, jd, c, k, chg, rsi, below, abv, one });
     return `<a class="card st-${jd?.chip || 'none'}" href="#/t/${encodeURIComponent(s)}">
       <div class="card-h"><div class="lgrow">${logo(s, nameOf(s, J), 32)}<div><div class="card-n w">${nameOf(s, J)} <span class="mut mono" style="font-size:11px">${esc(s)}</span></div><div class="mut mono" style="font-size:11px">${r.asof} 종가</div></div></div>${chip(jd)}</div>
-      <div class="card-p"><span class="mono ${cls(chg)}" style="font-size:24px;font-weight:600">${fmtP(c, k)}</span><span class="mono ${cls(chg)}">${sgn(chg)}</span>${why ? `<span class="mut" style="font-size:11px">${why}</span>` : ''}<span class="card-sp">${sparkline(rows.slice(-30).map(x => x.close), rows.length > 30 && rows[rows.length - 1].close >= rows[rows.length - 30].close ? C.up : C.dn, 80, 24)}</span></div>
-      ${levelBar(uniq, c, k)}
+      <div class="card-p"><span class="mono ${cls(chg)}" style="font-size:24px;font-weight:600" data-live-p="${esc(s)}" data-k="${k ? 1 : 0}">${fmtP(c, k)}</span><span class="mono ${cls(chg)}" data-live-c="${esc(s)}">${sgn(chg)}</span><span class="live" data-live-t="${esc(s)}"></span>${why ? `<span class="mut why" style="font-size:11px">${why}</span>` : ''}<span class="card-sp">${sparkline(rows.slice(-30).map(x => x.close), rows.length > 30 && rows[rows.length - 1].close >= rows[rows.length - 30].close ? C.up : C.dn, 80, 24)}</span></div>
+      ${levelBar(uniq, c, k, s)}
       <div class="card-f"><span class="${rsi < 30 ? 'ok' : rsi > 70 ? 'warn' : 'mut'}">${term('RSI')} ${rsi.toFixed(0)}${rsi < 30 ? ' 과매도' : rsi > 70 ? ' 과매수' : ''}</span><span class="mut">·</span><span class="mut">${term('거래량')} ${r.rsi_volume.vol_ratio.toFixed(1)}×</span>${r.pattern?.type ? `<span class="mut">·</span><span class="warn">${term('쐐기', r.pattern.type)}</span>` : ''}${FL?.[s] ? `<span class="mut">·</span><span class="${FL[s].fo['5'] >= 0 ? 'up' : 'dn'}">외+기 5일 ${eok(FL[s].fo['5'])}</span>` : ''}</div>
       <div class="card-one">${esc(one)}</div>
     </a>`;
@@ -224,7 +224,7 @@ async function renderDesk() {
     return `<div class="mini">${lab(x.below, 'left')}${lab(x.abv, 'right')}${md(x.below, 'left')}${md(x.abv, 'right')}<div class="t"></div>${x.below ? `<div class="m" style="left:2%;background:${x.below.color}"></div>` : ''}${x.abv ? `<div class="m" style="left:98%;background:${x.abv.color}"></div>` : ''}<div class="m now" style="left:${pos(x.c)}%"></div></div>`;
   };
   const dist = (o, c) => o ? `<span class="${o.price < c ? 'ok' : 'warn'}">${sgn(pct(o.price, c))}</span>` : '<span class="mut">—</span>';
-  const table = `<div class="tbl"><div class="tr"><span>종목</span><span>종가</span><span>받침 ↔ 천장 (현재 위치)</span><span class="d">아래선까지</span><span class="d">위선까지</span><span class="d">RSI</span><span>상태</span></div>${trs.map(x => `<a class="tr" href="#/t/${encodeURIComponent(x.s)}" title="${esc(x.one)}"><span class="n lgrow">${logo(x.s, nameOf(x.s, J), 26)}<span>${nameOf(x.s, J)}<small>${esc(x.s)}</small></span></span><span class="pr ${cls(x.chg)}">${fmtP(x.c, x.k)}<small>${sgn(x.chg)}</small></span>${miniBar(x)}<span class="d hd">${dist(x.below, x.c)}</span><span class="d hd">${dist(x.abv, x.c)}</span><span class="d hd ${x.rsi < 30 ? 'ok' : x.rsi > 70 ? 'warn' : 'mut'}">${x.rsi.toFixed(0)}</span><span>${chip(x.jd)}</span></a>`).join('')}</div>`;
+  const table = `<div class="tbl"><div class="tr"><span>종목</span><span>종가</span><span>받침 ↔ 천장 (현재 위치)</span><span class="d">아래선까지</span><span class="d">위선까지</span><span class="d">RSI</span><span>상태</span></div>${trs.map(x => `<a class="tr" href="#/t/${encodeURIComponent(x.s)}" title="${esc(x.one)}"><span class="n lgrow">${logo(x.s, nameOf(x.s, J), 26)}<span>${nameOf(x.s, J)}<small>${esc(x.s)}</small></span></span><span class="pr ${cls(x.chg)}" data-live-cls="${esc(x.s)}"><span data-live-p="${esc(x.s)}" data-k="${x.k ? 1 : 0}">${fmtP(x.c, x.k)}</span><small data-live-c="${esc(x.s)}">${sgn(x.chg)}</small></span>${miniBar(x)}<span class="d hd">${dist(x.below, x.c)}</span><span class="d hd">${dist(x.abv, x.c)}</span><span class="d hd ${x.rsi < 30 ? 'ok' : x.rsi > 70 ? 'warn' : 'mut'}">${x.rsi.toFixed(0)}</span><span>${chip(x.jd)}</span></a>`).join('')}</div>`;
   const view = LS.get('deskView') || 'card';
   main.innerHTML = `
     <form class="find" id="findF" autocomplete="off"><input id="findQ" placeholder="종목 찾기 — 이름·코드·미국 티커 (예: 한화에어로스페이스, NVDA)" enterkeyhint="search"><button class="btn pri">분석</button></form><div id="findMsg" class="find-msg" hidden></div>
@@ -250,6 +250,44 @@ async function renderDesk() {
   $('#foot').textContent = `읽음 ${stamp()}`;
 }
 
+/* 실시간 시세 (Cloudflare Worker 중계) — 보는 용도. 판단·손절은 계속 종가 기준 */
+let LIVE = {}, liveTimer = null, liveSyms = [];
+function liveStart() {
+  clearInterval(liveTimer); liveTimer = null;
+  const url = (window.INVESTOOL_CONFIG || {}).QUOTE_URL; if (!url) return;
+  liveSyms = [...new Set([...document.querySelectorAll('[data-live-p]')].map(e => e.dataset.liveP))].slice(0, 40);
+  if (!liveSyms.length) return;
+  const tick = async () => {
+    if (document.hidden) return;
+    try {
+      const r = await fetch(url.replace(/\/$/, '') + '/q?s=' + encodeURIComponent(liveSyms.join(',')), { cache: 'no-store' });
+      if (r.ok) { LIVE = { ...LIVE, ...(await r.json()) }; liveApply(); }
+    } catch { }
+  };
+  tick(); liveTimer = setInterval(tick, 15000);
+}
+function liveApply() {
+  const now = Date.now();
+  for (const [s, q] of Object.entries(LIVE)) {
+    if (!q || q.p == null || s === '_at') continue;
+    const open = q.st === 'open', up = q.pct >= 0;
+    const cssSel = v => CSS.escape ? CSS.escape(v) : v;
+    document.querySelectorAll(`[data-live-p="${cssSel(s)}"]`).forEach(el => { const k = el.dataset.k === '1'; const t = fmtP(q.p, k); if (el.textContent !== t) { el.textContent = t; el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } el.classList.toggle('up', up); el.classList.toggle('dn', !up); });
+    document.querySelectorAll(`[data-live-c="${cssSel(s)}"]`).forEach(el => { el.textContent = sgn(q.pct, 2); el.classList.toggle('up', up); el.classList.toggle('dn', !up); });
+    document.querySelectorAll(`[data-live-cls="${cssSel(s)}"]`).forEach(el => { el.classList.toggle('up', up); el.classList.toggle('dn', !up); });
+    const ago = q.t ? Math.max(0, Math.round((now - new Date(q.t)) / 1000)) : null;
+    document.querySelectorAll(`[data-live-t="${cssSel(s)}"]`).forEach(el => { el.innerHTML = open ? `<i></i>장중${ago != null && ago < 3600 ? ` · ${ago < 60 ? ago + '초' : Math.round(ago / 60) + '분'} 전` : ''}` : q.st === 'pre' ? '<i class="off"></i>장 전' : ''; el.classList.toggle('on', open); });
+    document.querySelectorAll(`[data-live-bar="${cssSel(s)}"]`).forEach(el => { const mn = +el.dataset.mn, mx = +el.dataset.mx; const n = el.querySelector('.lb-now'); if (n && mx > mn && open) n.style.left = Math.max(0, Math.min(100, (q.p - mn) / (mx - mn) * 100)).toFixed(1) + '%'; });
+    document.querySelectorAll(`[data-live-stop="${cssSel(s)}"]`).forEach(el => {
+      const st = +el.dataset.stop; if (!st || !open) { el.hidden = true; return; }
+      const room = (q.p / st - 1) * 100;
+      if (room < 0) { el.hidden = false; el.className = 'livewarn dn'; el.innerHTML = `장중 ${fmtP(q.p, false)} — 손절선 ${st} <b>아래</b>. 규칙은 <b>종가</b>로만 판단해요. 마감까지 지켜보기.`; }
+      else if (room < 1.5) { el.hidden = false; el.className = 'livewarn warn'; el.innerHTML = `장중 손절선 ${st}까지 <b>${room.toFixed(1)}%</b> — 종가 확인 전 매매 금지.`; }
+      else el.hidden = true;
+    });
+  }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && liveTimer) liveStart(); });
 /* 종목 찾기: 이미 분석된 종목이면 바로 이동, 아니면 GitHub에서 분석 실행(토큰 있으면 원탭, 없으면 실행 페이지로) */
 const REPO = 'mannolmeok/investool';
 function bindFind(J) {
@@ -405,9 +443,10 @@ async function renderTicker(sym) {
   </div>`;
   main.innerHTML = `
     <div class="thead"><div class="bar"><a href="#/" class="back">‹</a><h1 class="lgrow">${logo(sym, nameOf(sym, J), 30)}${nameOf(sym, J)} <span class="mut mono" style="font-size:12px;font-weight:400">${esc(sym)}</span></h1>${jd ? `<span style="margin-left:auto">${chip(jd)}</span>` : ''}</div>
-      <div class="bar"><span class="mono ${cls(chg)}" style="font-size:26px;font-weight:600">${f(c)}</span><span class="mono ${cls(chg)}" style="font-size:14px">${sgn(chg)}</span><span class="mut mono" style="font-size:11px">${r.asof} 종가 · 야후 15분 지연</span></div></div>
+      <div class="bar"><span class="mono ${cls(chg)}" style="font-size:26px;font-weight:600" data-live-p="${esc(sym)}" data-k="${k ? 1 : 0}">${f(c)}</span><span class="mono ${cls(chg)}" style="font-size:14px" data-live-c="${esc(sym)}">${sgn(chg)}</span><span class="live" data-live-t="${esc(sym)}"></span><span class="mut mono" style="font-size:11px">판단 기준: ${r.asof} 종가</span></div></div>
+    <div class="livewarn" data-live-stop="${esc(sym)}" data-stop="${jd?.held && jd.stop ? jd.stop : ''}" hidden></div>
     <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}<small>${esc(PLAIN[jd?.chip] || (conf.length ? '유명한 선 여러 개가 겹치는 가격 근처예요. 한 번 튀어오를 수는 있지만 바닥이 확정된 건 아니에요.' : '가까운 기준선이 없어서 다음 기준선까지 미끄러질 수 있어요.'))}</small></div>
-    <div class="pos"><div class="pos-k">지금 어디쯤? <span class="mut">← 받침 · 천장 → · 흰 막대 = 현재가</span></div>${levelBar(keyLevels(r, jd), c, k)}</div>
+    <div class="pos"><div class="pos-k">지금 어디쯤? <span class="mut">← 받침 · 천장 → · 흰 막대 = 현재가</span></div>${levelBar(keyLevels(r, jd), c, k, sym)}</div>
     ${(() => { const items = [...((AL?.alerts || []).filter(x => x.symbol === sym).map(x => ({ t: x.text, lv: x.level, rule: x.rule }))), ...((jd?.watch_today || []).filter(x => !(x.startsWith('★') && (AL?.alerts || []).some(a => a.symbol === sym && a.rule.startsWith('합류')))).map(x => ({ t: x, lv: 'mut' })))];
       if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(LS.get(key) || '{}'); } catch {}
       return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
@@ -607,7 +646,8 @@ function setNav(name) { document.querySelectorAll('[data-nav]').forEach(a => a.c
 function stamp() { return new Date().toLocaleString('ko-KR', { hour12: false }); }
 function route() {
   const h = location.hash || '#/'; const m = h.match(/^#\/t\/(.+)$/);
-  window.scrollTo(0, 0);
+  window.scrollTo(0, 0); clearInterval(liveTimer); liveTimer = null;
+  setTimeout(function waitLive(n = 0) { if (document.querySelector('[data-live-p]')) liveStart(); else if (n < 20) setTimeout(() => waitLive(n + 1), 300); }, 300);
   if (m) return renderTicker(decodeURIComponent(m[1]));
   if (h === '#/screener') return renderScreener();
   if (h === '#/journal') return renderJournal();

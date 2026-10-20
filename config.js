@@ -3,6 +3,7 @@
    SUPABASE_*: 선택. 비워두면 구독 정보를 push_subs.json 에 저장하는 방식(DB 없음, 1인용). */
 window.INVESTOOL_CONFIG = {
   VAPID_PUBLIC_KEY: "BH5_qXvIZbO_lUkkiUQflaA7wjnJsOkJvCLx6uEoiKXE-N8988ayTOAzFdLbocIoG5ZcjlLbCKeIkflBCuyiX6c",
+  QUOTE_URL: "",  // 실시간 시세 중계(Cloudflare Worker) 주소. 예: https://investool-quote.<이름>.workers.dev
   SUPABASE_URL: "",
   SUPABASE_ANON_KEY: ""
 };
