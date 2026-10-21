@@ -1,4 +1,4 @@
 {
- "https://investool-quote.jsm2092.workers.dev/": "{\"ok\":true,\"v\":2,\"use\":[\"/q?s=005930.KS,INFQ\",\"/c?s=005930.KS&tf=d\",\"/f?s=005930.KS\",\"/s?q=삼성\"]}",
- "https://investool-quote.jsm2092.workers.dev/kick-test": "{\"ok\":true,\"v\":2,\"use\":[\"/q?s=005930.KS,INFQ\",\"/c?s=005930.KS&tf=d\",\"/f?s=005930.KS\",\"/s?q=삼성\"]}"
+ "https://investool-quote.jsm2092.workers.dev/": "{\"ok\":true,\"v\":3,\"gh_token\":true,\"use\":[\"/q?s=005930.KS,INFQ\",\"/c?s=005930.KS&tf=d\",\"/f?s=005930.KS\",\"/s?q=삼성\"]}",
+ "https://investool-quote.jsm2092.workers.dev/kick-test?x=2": "{\"ok\":true,\"status\":200}"
 }
