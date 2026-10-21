@@ -1,0 +1,17 @@
+[
+  {
+    "id": "seed-infq-1",
+    "date": "2026-10-16",
+    "symbol": "INFQ",
+    "name": "인플렉션",
+    "side": "buy",
+    "memo": "FUD 과매도 바닥 플레이북 · 1차(9.00 지정가)",
+    "qty": 415,
+    "price": 9.0,
+    "amount": 3735.0,
+    "stop": 8.57,
+    "avg_before": null,
+    "risk": 178.45,
+    "rule": "ok"
+  }
+]

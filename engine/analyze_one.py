@@ -42,9 +42,9 @@ def main():
     pj = ROOT / "positions.json"; cfg = json.loads(pj.read_text(encoding="utf-8"))
     cfg.setdefault("names", {})[sym] = name
     pj.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
-    wl = ROOT / "watchlist.txt"; lines = wl.read_text().splitlines()
-    if add and sym not in [l.strip() for l in lines]:
-        wl.write_text("\n".join(lines + [sym]) + "\n")
+    if add:  # 직접 추가한 종목은 '고정' 구간(스크리너 자동 교체 구간 위)에
+        from position_cli import ensure_watch
+        ensure_watch(sym)
     # 주봉·월봉·1시간봉 + 큰 그림도 같이 (관심 종목이 아니어도)
     from fetch import fetch_tf
     for tf in ("w", "m", "h"):

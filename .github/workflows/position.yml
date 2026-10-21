@@ -1,0 +1,34 @@
+name: position
+run-name: "매매: ${{ inputs.op }}"
+on:
+  workflow_dispatch:
+    inputs:
+      op:
+        description: '예) {"action":"buy","symbol":"INFQ","qty":100,"price":8.8,"stop":8.4}'
+        required: true
+permissions: { contents: write }
+concurrency: { group: investool-write, cancel-in-progress: false }
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get install -y fonts-noto-cjk >/dev/null
+      - run: pip install -r requirements.txt
+      - name: apply
+        env: { OP: "${{ inputs.op }}" }
+        run: python engine/position_cli.py "$OP"
+      - name: analyze if new · judge · bundle
+        env: { OP: "${{ inputs.op }}" }
+        run: |
+          SYM=$(python -c "import json,os;print(json.loads(os.environ['OP'])['symbol'].upper())")
+          test -f "out/$SYM.json" || python engine/analyze_one.py "$SYM"
+          python -c "import sys;sys.path.insert(0,'engine');from judge import main;main()"
+          python engine/bundle.py
+      - run: |
+          git config user.name investool-bot; git config user.email bot@investool
+          git add -A positions.json trades.json watchlist.txt logos data out
+          git commit -m "position: $(date -u +%F)" || exit 0
+          git pull --rebase -X theirs && git push

@@ -421,6 +421,64 @@ function bindFind(J) {
     msg.innerHTML = '실시간 중계 주소(QUOTE_URL)가 설정돼 있지 않아요.';
   };
 }
+/* ------------------------------------------------------------ 내 포지션 (앱에서 매매 입력 → GitHub 가 positions.json·trades.json 반영) */
+function posPanel(sym, r, jd) {
+  const k = r.krw, f = v => fmtP(v, k), c = r.close;
+  const held = jd?.held;
+  const sup = [...(r.levels || []).map(l => l.price), ...(r.confluence || []).map(g => g.price), r.keys?.recent_low10].filter(p => p && p < c).sort((a, b) => b - a)[0];
+  const res = [r.trend_upper?.value_today, ...(r.levels || []).map(l => l.price), ...(r.confluence || []).map(g => g.price)].filter(p => p && p > c).sort((a, b) => a - b);
+  const head = held ? `<div class="pp-sum"><div><span>보유</span><b class="mono">${jd.qty}주</b></div><div><span>평단</span><b class="mono">${f(jd.avg)}</b></div><div><span>손익</span><b class="mono ${cls(jd.pnl_pct)}" data-pnl="${esc(sym)}" data-avg="${jd.avg}">${sgn(jd.pnl_pct)}</b></div><div><span>손절</span><b class="mono">${jd.stop ? f(jd.stop) : '—'}</b></div></div>`
+    : `<div class="mut" style="font-size:12px;padding:2px 0 6px">보유 중이 아니에요. 사면 여기에 기록하세요 — 판단 보드·손절 알림·일지가 이 기준으로 바뀌어요.</div>`;
+  const btn = (m, t) => `<button class="btn ${m === 'buy' && !held ? 'pri' : ''}" data-pm="${m}">${t}</button>`;
+  return `<section class="pp" data-sym="${esc(sym)}" data-krw="${k ? 1 : 0}" data-close="${c}" data-sup="${sup ?? ''}" data-res="${res.slice(0, 2).join(',')}" data-held="${held ? 1 : 0}" data-qty="${held ? jd.qty : ''}" data-stop="${jd?.stop ?? ''}" data-targets="${(jd?.targets || []).join(',')}">
+    <header><span>내 포지션</span><small>입력하면 1~2분 뒤 판단 보드·알림·일지에 반영</small></header>
+    <div style="padding:8px 12px 10px">${head}<div class="pp-btns">${held ? btn('buy', '＋ 추가 매수') + btn('sell', '－ 매도') + btn('set', '손절선·목표 수정') : btn('buy', '＋ 매수 기록')}</div>
+    <div class="pp-form" hidden></div><div class="pp-msg mut"></div></div></section>`;
+}
+function bindPosPanel(sym) {
+  const P = $('.pp'); if (!P) return;
+  const D = P.dataset, krw = D.krw === '1', fmt = v => v === '' || v == null ? '' : (krw ? Math.round(+v) : (+v).toFixed(2));
+  const form = P.querySelector('.pp-form'), msg = P.querySelector('.pp-msg');
+  P.querySelectorAll('[data-pm]').forEach(b => b.onclick = () => {
+    const m = b.dataset.pm; form.hidden = false; msg.textContent = '';
+    const tg = (D.targets || D.res || '').split(',').filter(Boolean).map(fmt).join(', ');
+    const fld = (id, label, val, hint = '') => `<label class="pf"><span>${label}</span><input id="pf_${id}" inputmode="decimal" value="${val ?? ''}" placeholder="${hint}"></label>`;
+    form.innerHTML = `<div class="pf-g">${m !== 'set' ? fld('qty', m === 'sell' ? '판 수량' : '산 수량', m === 'sell' ? D.qty : '', '주') + fld('price', m === 'sell' ? '판 가격' : '산 가격', fmt(D.close)) : ''}
+      ${m !== 'sell' ? fld('stop', '손절선 (종가 기준)', fmt(D.stop || D.sup), '필수') + fld('targets', '목표가 (쉼표로)', tg) : ''}
+      ${m === 'set' ? fld('stop_long', '장기분 손절선 (선택)', '') : ''}
+      ${fld('memo', '메모 (왜 샀/팔았나)', '', m === 'sell' ? '예) 추세선 돌파 실패' : '예) 120주선 받침 반등 확인')}</div>
+      <div class="pf-risk mut"></div><div class="pp-btns"><button class="btn pri" id="pf_ok">저장</button><button class="btn" id="pf_x">취소</button></div>`;
+    const risk = () => { const q = +$('#pf_qty')?.value || 0, p = +$('#pf_price')?.value || 0, st = +$('#pf_stop')?.value || 0;
+      if (m === 'buy' && q && p && st) $('.pf-risk').innerHTML = st >= p ? '<span class="dn">손절선은 산 가격보다 낮아야 해요</span>' : `손절까지 <b>${((1 - st / p) * 100).toFixed(1)}%</b> · 최대 손실 <b class="mono">${krw ? Math.round((p - st) * q).toLocaleString() + '원' : '$' + ((p - st) * q).toFixed(2)}</b>`;
+      else $('.pf-risk').textContent = ''; };
+    form.querySelectorAll('input').forEach(i => i.oninput = risk); risk();
+    $('#pf_x').onclick = () => { form.hidden = true; };
+    $('#pf_ok').onclick = async () => {
+      const v = id => $('#pf_' + id)?.value.trim();
+      const op = { action: m, symbol: sym, name: nameOf(sym), id: Math.random().toString(16).slice(2, 12) };
+      if (m !== 'set') { op.qty = +v('qty'); op.price = +v('price'); }
+      if (m !== 'sell') { if (v('stop')) op.stop = +v('stop'); if (v('targets')) op.targets = v('targets').split(',').map(x => +x.trim()).filter(Boolean); }
+      if (v('stop_long')) op.stop_long = +v('stop_long');
+      if (v('memo')) op.memo = v('memo');
+      if (m === 'buy' && !op.stop) { msg.innerHTML = '<span class="dn">손절선 없이 매수 없음 — 손절선을 넣어주세요.</span>'; return; }
+      if (m !== 'set' && (!op.qty || !op.price)) { msg.innerHTML = '<span class="dn">수량과 가격을 넣어주세요.</span>'; return; }
+      const tok = LS.get('ghToken');
+      const human = `${nameOf(sym)} ${m === 'buy' ? '매수' : m === 'sell' ? '매도' : '설정 변경'}${op.qty ? ` ${op.qty}주` : ''}${op.price ? ` @ ${op.price}` : ''}${op.stop ? `, 손절 ${op.stop}` : ''}${op.targets ? `, 목표 ${op.targets.join('/')}` : ''}${op.memo ? ` (${op.memo})` : ''}`;
+      if (!tok) { msg.innerHTML = `GitHub 토큰이 없어요. 알림·설정에서 넣어두거나, 이 문장을 Claude에게 보내주세요:<br><b>${esc(human)}</b>`; return; }
+      msg.textContent = '저장 요청 중…';
+      const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/position.yml/dispatches`, { method: 'POST', headers: { Authorization: `Bearer ${tok}`, Accept: 'application/vnd.github+json' }, body: JSON.stringify({ ref: 'main', inputs: { op: JSON.stringify(op) } }) }).catch(() => null);
+      if (!res || res.status !== 204) { msg.innerHTML = `<span class="dn">실패 (${res ? res.status : '네트워크'})</span> — 토큰 권한(Actions: Read and write) 확인`; return; }
+      form.hidden = true; const t0 = Date.now();
+      const tick = async () => {
+        const sec = Math.round((Date.now() - t0) / 1000);
+        try { const T = await (await fetch('trades.json?_=' + Date.now(), { cache: 'no-store' })).json(); if (T.some(x => x.id === op.id)) { msg.innerHTML = '<span class="ok">반영 완료 ✓</span> — 화면을 새로 그려요'; Object.keys(cache).forEach(k => delete cache[k]); setTimeout(() => renderTicker(sym), 800); return; } } catch { }
+        if (sec > 300) { msg.textContent = '5분이 지나도 반영이 안 보여요. GitHub Actions → position 기록을 확인해 주세요.'; return; }
+        msg.innerHTML = `저장 중… ${sec}초 <span class="mut">(${esc(human)})</span>`; setTimeout(tick, 8000);
+      };
+      setTimeout(tick, 20000);
+    };
+  });
+}
 /* 관심 종목에 추가 (GitHub 토큰 있으면 원탭, 없으면 안내) */
 async function addToWatch(sym) {
   const tok = LS.get('ghToken'), m = $('#addMsg');
@@ -562,6 +620,7 @@ async function renderTicker(sym, ov = null) {
     <div class="livewarn" data-live-stop="${esc(sym)}" data-stop="${jd?.held && jd.stop ? jd.stop : ''}" hidden></div>
     <div class="headline ${jd?.chip === 'exit' ? 'dn' : jd?.chip === 'warn' ? 'warn' : conf.length ? 'ok' : ''}">${esc(headline)}<small>${esc(PLAIN[jd?.chip] || (conf.length ? '유명한 선 여러 개가 겹치는 가격 근처예요. 한 번 튀어오를 수는 있지만 바닥이 확정된 건 아니에요.' : '가까운 기준선이 없어서 다음 기준선까지 미끄러질 수 있어요.'))}</small></div>
     <div class="pos"><div class="pos-k">지금 어디쯤? <span class="mut">← 받침 · 천장 → · 흰 막대 = 현재가</span></div>${levelBar(keyLevels(r, jd), c, k, sym)}</div>
+    ${posPanel(sym, r, jd)}
     ${(() => { const items = [...((AL?.alerts || []).filter(x => x.symbol === sym).map(x => ({ t: x.text, lv: x.level, rule: x.rule }))), ...((jd?.watch_today || []).filter(x => !(x.startsWith('★') && (AL?.alerts || []).some(a => a.symbol === sym && a.rule.startsWith('합류')))).map(x => ({ t: x, lv: 'mut' })))];
       if (!items.length) return ''; const key = 'chk:' + sym + ':' + r.asof; let done = {}; try { done = JSON.parse(LS.get(key) || '{}'); } catch {}
       return `<section class="todo"><header><span>오늘 볼 것</span><small>종가 기준 · 체크는 내 기기에만 저장</small></header><div class="todo-list">${items.map((it, i) => `<label class="todo-i ${done[i] ? 'done' : ''}"><input type="checkbox" data-key="${key}" data-i="${i}" ${done[i] ? 'checked' : ''}><span class="box"></span>${it.rule ? `<span class="chip ${it.lv}">${esc(it.rule)}</span>` : '<span></span>'}<span>${esc(it.t)}</span></label>`).join('')}</div></section>`; })()}
@@ -612,7 +671,7 @@ async function renderTicker(sym, ov = null) {
   document.querySelectorAll('#chartTf button').forEach(b => b.onclick = () => { LS.set('chartTf', b.dataset.tf); document.querySelectorAll('#chartTf button').forEach(x => x.classList.toggle('on', x === b)); redraw(); });
   redraw();
   document.querySelectorAll('#chartMode button').forEach(b => b.onclick = () => { LS.set('chartMode', b.dataset.m); document.querySelectorAll('#chartMode button').forEach(x => x.classList.toggle('on', x === b)); redraw(); });
-  bindTerms(); bindTodo();
+  bindTerms(); bindTodo(); bindPosPanel(sym);
   $('#foot').textContent = `${sym} · ${stamp()}`;
   loadWatchlist().then(wl => { if (!wl.includes(sym)) { const hd = $('.thead'); if (hd && !$('#addWrap')) hd.insertAdjacentHTML('beforeend', `<div id="addWrap" class="addw"><button class="btn" onclick="addToWatch('${esc(sym)}')">＋ 관심 종목에 추가</button><span class="mut" id="addMsg">추가하면 매일 판단·알림·성적표 대상이 돼요</span></div>`); } });
   if (ov) { const hd = $('.headline'); if (hd) hd.insertAdjacentHTML('afterbegin', `<span class="lvtag">${ov.open ? '장중' : '최신'} 데이터로 다시 계산 · ${ov.at.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}${batchR ? ' · 판단 보드는 종가 기준' : ''}</span>`); }
@@ -763,12 +822,42 @@ async function renderScreener() {
 }
 async function renderJournal() {
   setNav('journal'); main.innerHTML = '<div class="mut" style="padding:20px">불러오는 중…</div>';
-  const J = await j('out/judgement.json');
+  const [J, T0] = await Promise.all([j('out/judgement.json'), t('trades.json').then(x => { try { return JSON.parse(x); } catch { return []; } })]);
+  const T = [...(T0 || [])].filter(x => x.side === 'buy' || x.side === 'sell');
   const held = Object.values(J || {}).filter(x => x.held);
-  main.innerHTML = `<div class="bar"><h1>일지</h1><span class="tag" style="margin-left:auto">P3 미리보기</span></div>
-    <section><header><span>보유 · 계획</span><small>positions.json</small></header>${held.length ? held.map(x => `<div class="sent"><div><b class="w">${esc(x.name)}</b> ${chip(x)} <span class="mono">${x.qty}주 @ ${fmtP(x.avg, x.krw)}</span> · 손익 <b class="mono ${cls(x.pnl_pct)}">${sgn(x.pnl_pct)}</b> · 손절 <span class="mono">${fmtP(x.stop, x.krw)}</span>${x.r_now != null ? ` · <span class="mono">${x.r_now.toFixed(2)}R</span>` : ''}</div>${(x.plan || []).map(p => `<div class="mut">${p.n}차 ${esc(p.cond)} · ${esc(p.amount)} · ${esc(p.status)}</div>`).join('')}${x.note ? `<div class="mut">메모: ${esc(x.note)}</div>` : ''}</div>`).join('') : '<div class="sent"><div class="mut">보유 없음</div></div>'}</section>
-    <section><header><span>규칙 준수 체크 (수동)</span><small>P3에서 자동 채점</small></header><div class="sent"><div>· 손절선 없이 산 적 없음</div><div>· 반등 확인 전 물타기 없음</div><div>· 장중 손절 없음 (종가 기준)</div><div>· 손실 직후 사이즈 키운 적 없음 (틸트)</div></div></section>
-    <section><header><span>플레이북</span><small>positions.json note</small></header><div class="sent"><div><b class="w">FUD 과매도 바닥</b> — 급락 원인이 업종/지수 FUD · 가이던스 유지 · RSI 30↓ · 받침(합류) 위 가짜 이탈 → 1차 1/3, 종가 손절, 물타기 금지</div></div></section>`;
+  const isKrw = s => /\.(KS|KQ)$/.test(s);
+  const money = (v, krw) => v == null ? '—' : (v >= 0 ? '+' : '−') + (krw ? Math.abs(Math.round(v)).toLocaleString() + '원' : '$' + Math.abs(v).toFixed(2));
+  const sells = T.filter(x => x.side === 'sell');
+  const realK = sells.filter(x => isKrw(x.symbol)).reduce((a, x) => a + (x.realized || 0), 0), realU = sells.filter(x => !isKrw(x.symbol)).reduce((a, x) => a + (x.realized || 0), 0);
+  const wins = sells.filter(x => (x.realized || 0) > 0).length, rs = sells.filter(x => x.r != null).map(x => x.r);
+  // 규칙 채점: 손절선 지정(매수) · 늦은 손절(매도) · 평단 아래 추가 매수(물타기 의심)
+  const buys = T.filter(x => x.side === 'buy');
+  const water = buys.filter(x => x.avg_before && x.price < x.avg_before);
+  const late = sells.filter(x => x.rule === 'late_stop');
+  const score = Math.max(0, 100 - late.length * 20 - water.length * 15);
+  // 달력: 이번 달
+  const now = new Date(), y = now.getFullYear(), mo = now.getMonth(), first = new Date(y, mo, 1).getDay(), days = new Date(y, mo + 1, 0).getDate();
+  const ym = `${y}-${String(mo + 1).padStart(2, '0')}`;
+  const byDay = {}; T.filter(x => x.date.startsWith(ym)).forEach(x => { const d = +x.date.slice(8); (byDay[d] = byDay[d] || []).push(x); });
+  const cal = ['일', '월', '화', '수', '목', '금', '토'].map(d => `<div class="cal-h">${d}</div>`).join('') + Array.from({ length: first }, () => '<div></div>').join('') +
+    Array.from({ length: days }, (_, i) => { const d = i + 1, L = byDay[d] || [], r = L.filter(x => x.side === 'sell').reduce((a, x) => a + (x.realized || 0), 0), hasB = L.some(x => x.side === 'buy');
+      return `<div class="cal-d ${r > 0 ? 'win' : r < 0 ? 'loss' : ''} ${d === now.getDate() ? 'today' : ''}"><span>${d}</span>${hasB ? '<i class="b"></i>' : ''}${r ? `<em class="mono">${r > 0 ? '+' : '−'}${Math.abs(r) >= 1e4 ? (Math.abs(r) / 1e4).toFixed(0) + '만' : Math.abs(Math.round(r))}</em>` : ''}</div>`; }).join('');
+  const ruleChip = x => x.side === 'buy' ? (x.avg_before && x.price < x.avg_before ? '<span class="chip warn" style="font-size:10px">평단 아래 추가</span>' : '<span class="chip ok" style="font-size:10px">손절선 지정</span>')
+    : x.rule === 'late_stop' ? '<span class="chip dn" style="font-size:10px">늦은 손절</span>' : x.rule === 'stop' ? '<span class="chip ok" style="font-size:10px">손절 지킴</span>' : '';
+  const rows = [...T].reverse().map(x => `<a class="jr" href="#/t/${encodeURIComponent(x.symbol)}"><span class="mono mut">${x.date.slice(5)}</span><span class="lgrow">${logo(x.symbol, x.name, 22)}<b class="w">${esc(nameOf(x.symbol) !== x.symbol ? nameOf(x.symbol) : x.name)}</b></span>
+      <span class="chip ${x.side === 'buy' ? 'up' : 'dn'}" style="font-size:10px">${x.side === 'buy' ? '매수' : '매도'}</span><span class="mono">${x.qty}주 @ ${fmtP(x.price, isKrw(x.symbol))}</span>
+      <span class="mono ${x.realized > 0 ? 'up' : x.realized < 0 ? 'dn' : 'mut'}">${x.side === 'sell' ? money(x.realized, isKrw(x.symbol)) + (x.r != null ? ` · ${x.r > 0 ? '+' : ''}${x.r}R` : '') : x.stop ? `손절 ${fmtP(x.stop, isKrw(x.symbol))}` : ''}</span>${ruleChip(x)}${x.memo ? `<span class="jr-m">${esc(x.memo)}</span>` : ''}</a>`).join('');
+  main.innerHTML = `<div class="bar"><h1>일지</h1><span class="mut" style="font-size:12px">종목 페이지 '내 포지션'에서 매수·매도를 기록하면 여기 쌓여요</span></div>
+    <div class="jk">
+      <div><span>실현 손익</span><b class="mono ${realK >= 0 ? 'up' : 'dn'}">${sells.some(x => isKrw(x.symbol)) ? money(realK, true) : '—'}</b>${sells.some(x => !isKrw(x.symbol)) ? `<small class="mono ${realU >= 0 ? 'up' : 'dn'}">${money(realU, false)}</small>` : ''}</div>
+      <div><span>승률</span><b class="mono">${sells.length ? Math.round(wins / sells.length * 100) + '%' : '—'}</b><small class="mut">${sells.length}번 매도</small></div>
+      <div><span>평균 R</span><b class="mono ${(rs.reduce((a, b) => a + b, 0) / (rs.length || 1)) >= 0 ? 'up' : 'dn'}">${rs.length ? (rs.reduce((a, b) => a + b, 0) / rs.length).toFixed(2) + 'R' : '—'}</b><small class="mut">1R = 손절까지 거리</small></div>
+      <div><span>규칙 점수</span><b class="mono ${score >= 80 ? 'ok' : score >= 60 ? 'warn' : 'dn'}">${score}</b><small class="mut">늦은 손절 ${late.length} · 평단 아래 추가 ${water.length}</small></div>
+    </div>
+    <section><header><span>지금 보유</span><small>판단 보드 기준 (종가)</small></header>${held.length ? held.map(x => `<a class="jr" href="#/t/${encodeURIComponent(x.symbol)}"><span class="lgrow">${logo(x.symbol, x.name, 22)}<b class="w">${esc(x.name)}</b></span>${chip(x)}<span class="mono">${x.qty}주 @ ${fmtP(x.avg, x.krw)}</span><span class="mono ${cls(x.pnl_pct)}">${sgn(x.pnl_pct)}</span><span class="mono mut">손절 ${x.stop ? fmtP(x.stop, x.krw) + ` (${x.stop_room_pct?.toFixed(1)}%)` : '없음'}</span></a>`).join('') : '<div class="sent"><div class="mut">보유 종목 없음</div></div>'}</section>
+    <section><header><span>${y}년 ${mo + 1}월</span><small>빨강 = 이익 매도 · 파랑 = 손실 매도 · 점 = 매수</small></header><div class="cal">${cal}</div></section>
+    <section><header><span>매매 기록 ${T.length}</span><small>최근 순</small></header><div class="jr-l">${rows || '<div class="sent"><div class="mut">아직 기록이 없어요</div></div>'}</div></section>
+    <section><header><span>채점 기준</span></header><div class="sent"><div>· <b>손절선 지정</b>: 매수할 때 손절선이 없으면 저장이 안 돼요 (규칙: 손절선 없이 매수 없음).</div><div>· <b class="dn">늦은 손절</b>: 손절선보다 1% 넘게 아래에서 판 경우 −20점.</div><div>· <b class="warn">평단 아래 추가</b>: 평단보다 낮은 가격에 더 산 경우 −15점. 반등 확인 후였다면 메모에 근거를 남겨두세요.</div><div>· <b>R</b> = (판 가격 − 평단) ÷ (평단 − 손절선). +2R = 감수한 위험의 2배를 벌었다는 뜻.</div></div></section>`;
 }
 /* ------------------------------------------------------------ 공통 */
 function b64ToU8(b) { const p = '='.repeat((4 - b.length % 4) % 4); const s = (b + p).replace(/-/g, '+').replace(/_/g, '/'); const r = atob(s); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); }

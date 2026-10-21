@@ -38,6 +38,8 @@ def judge_one(p: dict, r: dict, rules: dict) -> dict:
         pl = pct(close, avg)
         res["pnl_pct"] = pl
         res["qty"], res["avg"] = p["qty"], avg
+        res["targets"] = p.get("targets") or []
+        res["since"] = p.get("since")
         if stop:
             room = pct(close, stop)
             res["stop"], res["stop_room_pct"] = stop, room
