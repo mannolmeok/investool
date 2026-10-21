@@ -3,6 +3,8 @@
 //  /c?s=005930.KS&tf=d|w|m|h    차트 데이터 (일 1년 · 주 5년 · 월 전체 · 1시간 60일)  → [[날짜|유닉스초, 시, 고, 저, 종, 거래량], ...]
 //  /f?s=005930.KS               수급 60일 (외국인·기관·개인 순매수, 국내만)
 //  /s?q=한화에어로              종목 검색 (국내 이름·코드 → 야후 심볼)
+//  정시 알람(Cron Triggers): 정해진 시각에 GitHub 배치(daily.yml)를 깨움 — 비밀값 GH_TOKEN 필요
+//    43 6 * * 1-5  → 15:43 KST 국내 마감 후   ·   13 21 * * 1-5 → 06:13 KST 미국 마감 후(서머타임 무관)
 const OK_SYM = /^(\d{6}\.(KS|KQ)|[A-Z][A-Z0-9.\-]{0,9}|\^[A-Z0-9]{2,8})$/;
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Content-Type': 'application/json; charset=utf-8' };
 const UA = { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', 'Referer': 'https://m.stock.naver.com/' };
@@ -76,7 +78,16 @@ async function cached(ctx, key, ttl, fn) {
   return new Response(body, { headers: CORS });
 }
 
+async function kick(env, reason) {
+  if (!env.GH_TOKEN) return { ok: false, err: 'GH_TOKEN 없음' };
+  const r = await fetch('https://api.github.com/repos/mannolmeok/investool/actions/workflows/daily.yml/dispatches', {
+    method: 'POST', headers: { Authorization: `Bearer ${env.GH_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'investool-worker' },
+    body: JSON.stringify({ ref: 'main' }) });
+  return { ok: r.status === 204, status: r.status, reason };
+}
+
 export default {
+  async scheduled(event, env, ctx) { ctx.waitUntil(kick(env, event.cron)); },
   async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
     const url = new URL(req.url), P = url.pathname, sp = url.searchParams;
@@ -105,7 +116,12 @@ export default {
         if (!q) return json([], 400);
         return cached(ctx, 's?' + q, 3600, () => search(q));
       }
-      return json({ ok: true, v: 2, use: ['/q?s=005930.KS,INFQ', '/c?s=005930.KS&tf=d', '/f?s=005930.KS', '/s?q=삼성'] });
+      if (P === '/kick-test') {  // 설정 확인용: 토큰이 유효한지만 읽어서 확인 (배치는 안 돌림)
+        if (!env.GH_TOKEN) return json({ ok: false, err: 'GH_TOKEN 없음' });
+        const r = await fetch('https://api.github.com/repos/mannolmeok/investool/actions/workflows/daily.yml', { headers: { Authorization: `Bearer ${env.GH_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'investool-worker' } });
+        return json({ ok: r.status === 200, status: r.status });
+      }
+      return json({ ok: true, v: 3, gh_token: !!env.GH_TOKEN, use: ['/q?s=005930.KS,INFQ', '/c?s=005930.KS&tf=d', '/f?s=005930.KS', '/s?q=삼성'] });
     } catch (e) {
       return json({ err: String(e.message || e) }, 502);
     }
