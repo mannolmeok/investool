@@ -1,11 +1,9 @@
 name: daily-lines
 on:
   schedule:
-    # GitHub 크론은 정각/10분 단위에 몰려 지연·누락이 잦음 → 어중간한 분 + 30분 뒤 재시도
-    - cron: "43 6 * * 1-5"   # 15:43 KST 국내 마감 후
-    - cron: "17 7 * * 1-5"   # 16:17 KST 재시도
-    - cron: "13 20 * * 1-5"  # 05:13 KST 미국 마감 후
-    - cron: "47 20 * * 1-5"  # 05:47 KST 재시도
+    # 정시 실행은 Cloudflare 정시 알람(15:43 · 06:13 KST)이 맡음. 아래는 그게 실패했을 때를 위한 늦은 예비
+    - cron: "43 9 * * 1-5"   # 18:43 KST 예비
+    - cron: "43 23 * * 1-5"  # 08:43 KST 예비
   workflow_dispatch:
 permissions:
   contents: write
