@@ -189,6 +189,7 @@ async function renderDesk() {
   const sect = await Promise.all([['SOXX', '반도체 ETF'], ['IONQ', '아이온큐'], ['RGTI', '리게티'], ['QBTS', '디웨이브']].map(async ([s, n]) => ({ s, n, rows: await csvOf(s) })));
   const sectH = sect.filter(m => m.rows.length > 2).map(m => { const l = m.rows[m.rows.length - 1], p = m.rows[m.rows.length - 2]; const ch = pct(l.close, p.close); return `<span class="sc"><b>${m.n}</b> <span class="mono ${cls(ch)}">${sgn(ch)}</span></span>`; }).join('');
   const mk = await Promise.all(ctx.map(async ([s, n]) => ({ s, n, rows: await csvOf(s) })));
+  const MW = await macroWeather(csvOf);
   const mkt = mk.filter(m => m.rows.length > 2).map(m => {
     const last = m.rows[m.rows.length - 1], prev = m.rows[m.rows.length - 2];
     const chg = pct(last.close, prev.close);
@@ -235,7 +236,7 @@ async function renderDesk() {
   const view = LS.get('deskView') || 'card';
   main.innerHTML = `
     <form class="find" id="findF" autocomplete="off"><input id="findQ" placeholder="종목 찾기 — 이름·코드·미국 티커 (예: 한화에어로스페이스, NVDA) · 바로 분석" enterkeyhint="search"><button class="btn pri">분석</button></form><div id="findMsg" class="find-msg" hidden></div>
-    <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span><span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
+    <div class="bar"><h1>데스크</h1><span class="mut mono" style="font-size:12px">종가 기준 · 평일 15:40 / 05:10 KST 자동</span>${(() => { const m = MW.match(/<span class="mw-i">(.*?)<\/span><div><b>(.*?)<\/b>/); return m ? `<a class="mw-pill" href="#mw">${m[1]} 시장 ${m[2]}</a>` : ''; })()}<span class="legend" style="margin-left:auto"><i style="background:${C.up}"></i>상승 <i style="background:${C.dn}"></i>하락 <i style="background:${C.ok}"></i>받침·충족 <i style="background:${C.warn}"></i>주의·선</span></div>
     ${(() => { const al = (AL?.alerts || []); if (!al.length) return '';
       const pr = { '손절 이탈': 0, '손절 근접': 1, '진입 조건': 2, '추세선 돌파': 3, '수급 전환': 4, '하단선 이탈': 5, '합류 받침': 6, 'RSI 과매도': 7, '합류 천장': 8 };
       const sorted = [...al].sort((a, b) => (pr[a.rule] ?? 9) - (pr[b.rule] ?? 9));
@@ -248,7 +249,8 @@ async function renderDesk() {
     ${flowRadar(FL, J)}
     ${trackStrip(TR)}
     ${eventsStrip(EV, J)}
-    <div class="mut" style="font-size:12px;padding:2px 2px 0">시장 맥락</div>
+    ${MW}
+    <div class="mut" style="font-size:12px;padding:2px 2px 0">지수</div>
     <div class="mkts">${mkt || '<div class="mut" style="padding:8px 12px">시장 지표는 다음 배치 후 표시</div>'}</div>
     ${sectH ? `<div class="sects"><span class="mut">업종 맥락</span>${sectH}</div>` : ''}
     <details class="rules"><summary>규칙 3줄</summary><div class="sent"><div>· 모든 판단은 종가 기준. 장중 흔들림은 무시.</div><div>· 손절선 없이 매수 없음. 반등 확인 전 물타기 금지.</div><div>· 문장은 가능성 표현. 확률 숫자 없음. 반대 근거 1줄 필수.</div></div></details>`;
@@ -486,6 +488,36 @@ async function addToWatch(sym) {
   m.textContent = '추가 요청 중…';
   const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/analyze.yml/dispatches`, { method: 'POST', headers: { Authorization: `Bearer ${tok}`, Accept: 'application/vnd.github+json' }, body: JSON.stringify({ ref: 'main', inputs: { q: sym, add: 'true' } }) }).catch(() => null);
   m.textContent = res && res.status === 204 ? '추가 요청 완료 — 2~3분 뒤부터 매일 판단·알림 대상이에요.' : `실패 (${res ? res.status : '네트워크'}) — 토큰 권한(Actions: Read and write) 확인`;
+}
+/* 시장 날씨 — 거시 카드 (환율·금리·달러·VIX·EWY·나스닥) */
+function macroWeather(get) {
+  const M = [
+    { s: 'KRW=X', n: '원/달러', unit: '원', d: 1, read: (v, c20) => c20 >= 1.5 ? ['off', '원화 약세 — 외국인이 한국 주식을 팔기 쉬운 환경'] : c20 <= -1.5 ? ['on', '원화 강세 — 외국인 매수에 우호적'] : ['mid', '환율 안정'] },
+    { s: '^TNX', n: '미 10년물 금리', unit: '%', d: 2, bp: true, read: (v, c20, d20) => d20 >= 0.2 ? ['off', '금리 상승 — 성장주·고PER주 부담'] : d20 <= -0.2 ? ['on', '금리 하락 — 성장주에 우호적'] : ['mid', '금리 보합'] },
+    { s: 'DX-Y.NYB', n: '달러 인덱스', unit: '', d: 1, read: (v, c20) => c20 >= 2 ? ['off', '달러 강세 — 신흥국(한국) 자금 이탈 압력'] : c20 <= -2 ? ['on', '달러 약세 — 신흥국에 우호적'] : ['mid', '달러 보합'] },
+    { s: '^VIX', n: 'VIX 공포지수', unit: '', d: 1, read: v => v < 15 ? ['on', '시장이 편안함'] : v < 25 ? ['mid', '경계 — 흔들릴 수 있음'] : ['off', '공포 — 변동성 큼, 손절선 우선'] },
+    { s: 'EWY', n: 'EWY (해외에서 본 한국)', unit: '$', d: 2, ma: true, read: (v, c20, d20, above, c1) => [above ? 'on' : 'off', (above ? '20일선 위 — 해외 자금 흐름 양호' : '20일선 아래 — 해외 자금 흐름 약함') + (Math.abs(c1) >= 1 ? ` · 밤사이 ${c1 > 0 ? '+' : ''}${c1.toFixed(1)}% → 오늘 코스피 ${c1 > 0 ? '강세' : '약세'} 출발 가능성` : '')] },
+    { s: '^IXIC', n: '나스닥', unit: '', d: 0, ma: true, read: (v, c20, d20, above) => [above ? 'on' : 'off', above ? '20일선 위 — 기술주 흐름 양호' : '20일선 아래 — 기술주 약세'] },
+  ];
+  return Promise.all(M.map(async m => ({ m, rows: await get(m.s) }))).then(L => {
+    let on = 0, off = 0;
+    const cards = L.filter(x => x.rows && x.rows.length > 21).map(({ m, rows }) => {
+      const cl = rows.map(r => r.close), v = cl[cl.length - 1], p1 = cl[cl.length - 2], p20 = cl[cl.length - 21];
+      const c1 = (v / p1 - 1) * 100, c20 = (v / p20 - 1) * 100, d20 = v - p20, ma20 = cl.slice(-20).reduce((a, b) => a + b, 0) / 20;
+      const [tone, text] = m.read(v, c20, d20, v > ma20, c1);
+      if (tone === 'on') on++; if (tone === 'off') off++;
+      const val = m.unit === '%' ? v.toFixed(2) + '%' : (m.unit === '$' ? '$' : '') + v.toLocaleString('en-US', { minimumFractionDigits: m.d, maximumFractionDigits: m.d }) + (m.unit === '원' ? '원' : '');
+      const chg20 = m.bp ? `${d20 >= 0 ? '+' : ''}${Math.round(d20 * 100)}bp` : `${c20 >= 0 ? '+' : ''}${c20.toFixed(1)}%`;
+      return `<div class="mc ${tone}"><div class="mc-n">${m.n}<small class="mono">${rows[rows.length - 1].time.slice(5)}</small></div>
+        <div class="mc-v mono">${val}</div><div class="mc-c mono"><span class="${c1 >= 0 ? 'up' : 'dn'}">${c1 >= 0 ? '+' : ''}${c1.toFixed(1)}%</span><span class="mut">20일 ${chg20}</span></div>
+        <div class="mc-s">${sparkline(cl.slice(-30), tone === 'on' ? C.ok : tone === 'off' ? C.dn : C.warn, 120, 26)}</div><div class="mc-t">${esc(text)}</div></div>`;
+    });
+    if (!cards.length) return '';
+    const sc = on - off, wx = sc >= 2 ? ['☀️', '맑음', '돈이 주식으로 들어오기 좋은 환경', 'on'] : sc <= -2 ? ['🌧️', '비', '자금이 빠지기 쉬운 환경 — 신규 매수는 받침 확인 후, 손절선 우선', 'off'] : ['⛅', '구름', '신호가 엇갈림 — 종목별 기준선대로', 'mid'];
+    return `<section class="mw" id="mw"><header><span>시장 날씨</span><small>좋음 ${on} · 나쁨 ${off} · 하루 2번 갱신</small></header>
+      <div class="mw-sum ${wx[3]}"><span class="mw-i">${wx[0]}</span><div><b>${wx[1]}</b><span>${wx[2]}</span></div></div>
+      <div class="mcs">${cards.join('')}</div></section>`;
+  });
 }
 /* 수급 — "내 뒤에 사줄 사람이 있나" */
 const FC = { f: '#B8A6FF', o: '#F5A623', i: '#8A8A8A' };

@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "out"
-CTX = ["^KS11", "^KQ11", "^GSPC", "^VIX", "SOXX", "IONQ", "RGTI", "QBTS"]
+CTX = ["^KS11", "^KQ11", "^GSPC", "^VIX", "SOXX", "IONQ", "RGTI", "QBTS", "KRW=X", "^TNX", "DX-Y.NYB", "EWY", "^IXIC"]
 
 
 def rd(p):
