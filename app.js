@@ -499,12 +499,16 @@ function macroWeather(get) {
     { s: 'EWY', n: 'EWY (해외에서 본 한국)', unit: '$', d: 2, ma: true, read: (v, c20, d20, above, c1) => [above ? 'on' : 'off', (above ? '20일선 위 — 해외 자금 흐름 양호' : '20일선 아래 — 해외 자금 흐름 약함') + (Math.abs(c1) >= 1 ? ` · 밤사이 ${c1 > 0 ? '+' : ''}${c1.toFixed(1)}% → 오늘 코스피 ${c1 > 0 ? '강세' : '약세'} 출발 가능성` : '')] },
     { s: '^IXIC', n: '나스닥', unit: '', d: 0, ma: true, read: (v, c20, d20, above) => [above ? 'on' : 'off', above ? '20일선 위 — 기술주 흐름 양호' : '20일선 아래 — 기술주 약세'] },
   ];
-  return Promise.all(M.map(async m => ({ m, rows: await get(m.s) }))).then(L => {
+  return Promise.all([...M.map(async m => ({ m, rows: await get(m.s) })), get('^GSPC').then(r => ({ ref: r }))]).then(L0 => {
+    const refDate = (L0.find(x => x.ref)?.ref || []).slice(-1)[0]?.time || '';
+    const L = L0.filter(x => x.m);
     let on = 0, off = 0;
     const cards = L.filter(x => x.rows && x.rows.length > 21).map(({ m, rows }) => {
       const cl = rows.map(r => r.close), v = cl[cl.length - 1], p1 = cl[cl.length - 2], p20 = cl[cl.length - 21];
       const c1 = (v / p1 - 1) * 100, c20 = (v / p20 - 1) * 100, d20 = v - p20, ma20 = cl.slice(-20).reduce((a, b) => a + b, 0) / 20;
-      const [tone, text] = m.read(v, c20, d20, v > ma20, c1);
+      const stale = m.s === 'EWY' && refDate && rows[rows.length - 1].time < refDate;  // 하루 늦은 데이터면 '오늘 출발' 힌트는 빼기
+      let [tone, text] = m.read(v, c20, d20, v > ma20, stale ? 0 : c1);
+      if (stale) text += ' · (최신 봉 대기 중)';
       if (tone === 'on') on++; if (tone === 'off') off++;
       const val = m.unit === '%' ? v.toFixed(2) + '%' : (m.unit === '$' ? '$' : '') + v.toLocaleString('en-US', { minimumFractionDigits: m.d, maximumFractionDigits: m.d }) + (m.unit === '원' ? '원' : '');
       const chg20 = m.bp ? `${d20 >= 0 ? '+' : ''}${Math.round(d20 * 100)}bp` : `${c20 >= 0 ? '+' : ''}${c20.toFixed(1)}%`;

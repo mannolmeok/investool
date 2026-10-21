@@ -2,7 +2,7 @@
    - 같은 사이트 파일: 캐시에 있으면 즉시 응답, 동시에 네트워크로 새 버전 받아 캐시 교체
    - 새 버전이 실제로 달라졌으면(out/·data/·config) 열린 화면에 'updated' 알림 → 앱이 조용히 다시 그림
    - 처음 여는 파일은 네트워크에서 받음 */
-const V = 'investool-v28';
+const V = 'investool-v29';
 const SHELL = ['./', './index.html', './app.js', './engine.js', './config.js', './manifest.webmanifest', './vendor/lightweight-charts.standalone.production.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
