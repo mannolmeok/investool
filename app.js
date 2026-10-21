@@ -189,7 +189,7 @@ async function renderDesk() {
   const sect = await Promise.all([['SOXX', '반도체 ETF'], ['IONQ', '아이온큐'], ['RGTI', '리게티'], ['QBTS', '디웨이브']].map(async ([s, n]) => ({ s, n, rows: await csvOf(s) })));
   const sectH = sect.filter(m => m.rows.length > 2).map(m => { const l = m.rows[m.rows.length - 1], p = m.rows[m.rows.length - 2]; const ch = pct(l.close, p.close); return `<span class="sc"><b>${m.n}</b> <span class="mono ${cls(ch)}">${sgn(ch)}</span></span>`; }).join('');
   const mk = await Promise.all(ctx.map(async ([s, n]) => ({ s, n, rows: await csvOf(s) })));
-  const MW = await macroWeather(csvOf);
+  const MW = await macroWeather(csvOf).catch(e => { console.warn('macro', e); return ''; });
   const mkt = mk.filter(m => m.rows.length > 2).map(m => {
     const last = m.rows[m.rows.length - 1], prev = m.rows[m.rows.length - 2];
     const chg = pct(last.close, prev.close);
@@ -499,7 +499,7 @@ function macroWeather(get) {
     { s: 'EWY', n: 'EWY (해외에서 본 한국)', unit: '$', d: 2, ma: true, read: (v, c20, d20, above, c1) => [above ? 'on' : 'off', (above ? '20일선 위 — 해외 자금 흐름 양호' : '20일선 아래 — 해외 자금 흐름 약함') + (Math.abs(c1) >= 1 ? ` · 밤사이 ${c1 > 0 ? '+' : ''}${c1.toFixed(1)}% → 오늘 코스피 ${c1 > 0 ? '강세' : '약세'} 출발 가능성` : '')] },
     { s: '^IXIC', n: '나스닥', unit: '', d: 0, ma: true, read: (v, c20, d20, above) => [above ? 'on' : 'off', above ? '20일선 위 — 기술주 흐름 양호' : '20일선 아래 — 기술주 약세'] },
   ];
-  return Promise.all([...M.map(async m => ({ m, rows: await get(m.s) })), get('^GSPC').then(r => ({ ref: r }))]).then(L0 => {
+  return Promise.all([...M.map(async m => ({ m, rows: await get(m.s) })), Promise.resolve(get('^GSPC')).then(r => ({ ref: r }))]).then(L0 => {
     const refDate = (L0.find(x => x.ref)?.ref || []).slice(-1)[0]?.time || '';
     const L = L0.filter(x => x.m);
     let on = 0, off = 0;
