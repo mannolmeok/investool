@@ -1,0 +1,31 @@
+name: prefs
+run-name: "알림 설정: ${{ inputs.prefs }}"
+# 앱 설정 → 알림 스위치가 부르는 것. push_prefs.json 한 파일만 바꾼다 (손절 알림은 push.py 에서 항상 켜짐)
+on:
+  workflow_dispatch:
+    inputs:
+      prefs:
+        description: '예) {"go":true,"near":true,"flow":false,"etc":true}'
+        required: true
+permissions: { contents: write }
+concurrency: { group: investool-write, cancel-in-progress: false }
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: write push_prefs.json
+        env: { P: "${{ inputs.prefs }}" }
+        run: |
+          python3 - <<'PY'
+          import json, os
+          d = json.loads(os.environ["P"])
+          keep = {k: bool(d[k]) for k in ("go", "near", "flow", "etc") if k in d}
+          open("push_prefs.json", "w", encoding="utf-8").write(json.dumps(keep, ensure_ascii=False, indent=1) + "\n")
+          print(keep)
+          PY
+      - run: |
+          git config user.name investool-bot; git config user.email bot@investool
+          git add push_prefs.json
+          git commit -m "prefs: 알림 설정" || exit 0
+          git pull --rebase -X theirs && git push

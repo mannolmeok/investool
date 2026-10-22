@@ -278,7 +278,7 @@
     if (res.length) { const r0 = res.reduce((a, b) => (b.price < a.price ? b : a)); S.push(`가장 가까운 저항 ${f(r0.price)} (${r0.touches}회, ${sp(pct(r0.price, close))}% 위).`); }
     if (upper) S.push(`${upper.slope_per_bar < 0 ? '하락' : '상단'} 추세선 ${upper.from}→${upper.to} (${upper.touches}터치, 봉당 ${sp(upper.slope_pct_per_bar)}%), 오늘 값 ${f(upper.value_today)}(${sp(pct(upper.value_today, close))}%). 종가로 넘으면 추세 전환 1차 신호.`);
     if (lower) S.push(`${lower.slope_per_bar > 0 ? '상승' : '하단'} 추세선 ${lower.from}→${lower.to}, 오늘 값 ${f(lower.value_today)}` + (close < lower.value_today * 0.995 ? ' — 현재가가 이미 아래(이탈).' : '.'));
-    if (['삼각수렴', '하락쐐기', '상승쐐기'].includes(pat.type)) S.push(`${pat.type} 진행 중 (상단 ${f(pat.upper_today)} / 하단 ${f(pat.lower_today)}), 꼭짓점까지 약 ${pat.bars_to_apex}봉. → 수렴 끝까지 횡보 가능성, 그 뒤 방향 결정 구간.`);
+    if (['삼각수렴', '하락쐐기', '상승쐐기'].includes(pat.type)) S.push(pat.bars_to_apex <= 60 ? `${pat.type} 진행 중 (상단 ${f(pat.upper_today)} / 하단 ${f(pat.lower_today)}), 꼭짓점까지 약 ${pat.bars_to_apex}봉. → 수렴 끝까지 횡보 가능성, 그 뒤 방향 결정 구간.` : `${pat.type} 모양이지만 꼭짓점이 멀어(60봉 넘게) 아직 신호로 보기 어려움.`);
     else if (pat.type === '박스') S.push(`박스권 ${f(pat.box_low)}~${f(pat.box_high)} ${pat.bars}봉째. 박스 안에서는 횡보 가능성 높고, 상·하단 종가 이탈이 신호.`);
     const fl = fib.levels;
     if (fib.direction === 'up') S.push(`피보나치(상승 스윙 ${fib.swing_low_date}→${fib.swing_high_date}의 되돌림): 38.2% ${f(fl['38.2%'])} · 50% ${f(fl['50.0%'])} · 61.8% ${f(fl['61.8%'])}. ` + (close < fl['61.8%'] ? '61.8% 아래 — 되돌림이 깊어 상승 추세 자체가 의심되는 구간.' : ''));

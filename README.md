@@ -9,11 +9,11 @@
 - `engine/render.py` — 선 그어진 차트 PNG (상승 빨강 / 하락 파랑)
 - `engine/judge.py` — 판단 보드(종가 기준 3행·상태 칩·분할 플랜) ← `positions.json`
 - `engine/attribution.py` — 급락/급등 원인 분해(지수 β·업종 피어·종목 고유·거래량 성격) ← `sectors.json`, `context.txt`
-- `engine/alerts.py` — 알림 규칙(손절 근접/이탈·추세선 돌파·합류 받침/천장·진입 조건·RSI) → `out/alerts.json`, 규칙당 하루 1회
+- `engine/alerts.py` — 알림 규칙(손절 근접/이탈·하락 흐름 끊김·바닥 후보/막힐 자리 근접·조건 충족·많이 팔림·수급 전환) → `out/alerts.json` (제목 = 종목·상태, 본문 = 가격 하나와 할 일), 규칙당 하루 1회 · 지난 알림과 다음 날 결과 `out/alerts_log.json`
 - `engine/backtest.py` — 워크포워드 검증 → `out/validation.md`
-- `engine/push.py` — 웹 푸시 전송(설정 없으면 건너뜀) · 연결법 `docs_push_setup.md`
+- `engine/push.py` — 웹 푸시 전송(설정 없으면 건너뜀) · 종류별 끄기 `push_prefs.json`(앱 설정 → `prefs.yml`) · 연결법 `docs_push_setup.md`
 - `engine/run_daily.py` — 위 전부 + `out/summary.md`
-- **앱(PWA)**: `index.html` `app.js` — 데스크 / 종목 페이지 / 알림·설정. GitHub Pages로 서빙(저장소 Public + Settings→Pages main/root)
+- **앱(PWA) v3.1**: `index.html` `app.js` — 홈(오늘 할 일) / 종목(계기판 결론·조건표·가격 지도·근거 탭) / 발굴 / 기록 / 알림·설정. 모바일 1열 · PC 목록+종목 한 화면. GitHub Pages로 서빙 — 디자인 원칙은 `DESIGN_NOTES.md`
 - GitHub Actions: 평일 15:40 KST(국내 마감) / 05:10 KST(미국 마감) 자동 실행 후 `out/` 커밋
 
 ## 파일로 조정하는 것

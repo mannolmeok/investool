@@ -431,8 +431,11 @@ def analyze_df(df: pd.DataFrame, symbol: str) -> dict:
                  + (" — 현재가가 이미 아래(이탈)." if close < lower["value_today"] * 0.995 else "."))
     # 패턴
     if pat["type"] in ("삼각수렴", "하락쐐기", "상승쐐기"):
-        S.append(f"{pat['type']} 진행 중 (상단 {f(pat['upper_today'])} / 하단 {f(pat['lower_today'])}), 꼭짓점까지 약 {pat['bars_to_apex']}봉. "
-                 f"→ 수렴 끝까지 횡보 가능성, 그 뒤 방향 결정 구간.")
+        if pat["bars_to_apex"] <= 60:
+            S.append(f"{pat['type']} 진행 중 (상단 {f(pat['upper_today'])} / 하단 {f(pat['lower_today'])}), 꼭짓점까지 약 {pat['bars_to_apex']}봉. "
+                     f"→ 수렴 끝까지 횡보 가능성, 그 뒤 방향 결정 구간.")
+        else:  # 꼭짓점이 수십~수천 봉 뒤면 숫자 자체가 의미 없음
+            S.append(f"{pat['type']} 모양이지만 꼭짓점이 멀어(60봉 넘게) 아직 신호로 보기 어려움.")
     elif pat["type"] == "박스":
         S.append(f"박스권 {f(pat['box_low'])}~{f(pat['box_high'])} {pat['bars']}봉째. 박스 안에서는 횡보 가능성 높고, 상·하단 종가 이탈이 신호.")
     # 피보

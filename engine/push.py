@@ -4,6 +4,8 @@
           구독 정보만으로는 푸시를 보낼 수 없음(VAPID 비밀키 필요) → 저장소에 있어도 안전.
 선택: SUPABASE_URL/SUPABASE_SERVICE_KEY 가 있으면 그 테이블 구독도 합쳐서 보냄.
 동작: out/alerts.json 의 new[] 만 전송. 설정이 없으면 조용히 건너뜀.
+      push_prefs.json (앱 설정 → 알림 스위치) 으로 종류별 끄기: {"go":true,"near":true,"flow":true,"etc":true}
+      손절(stop)은 끌 수 없음. 제목 = "종목 · 상태", 본문 = 가격 하나와 할 일.
 사용: python engine/push.py            (새 알림 전송)
       python engine/push.py --test     (테스트 알림 1건)
 """
@@ -35,6 +37,18 @@ def load_subs():
     return out
 
 
+def load_prefs():
+    f = ROOT / "push_prefs.json"
+    try:
+        d = json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+    except Exception:
+        d = {}
+    pr = {"go": True, "near": True, "flow": True, "etc": True}
+    pr.update({k: bool(v) for k, v in d.items() if k in pr})
+    pr["stop"] = True  # 손절 알림은 끌 수 없음
+    return pr
+
+
 def main():
     vpriv = os.environ.get("VAPID_PRIVATE_KEY")
     subj = os.environ.get("VAPID_SUBJECT") or "mailto:noreply@example.com"
@@ -48,17 +62,23 @@ def main():
     if not subs:
         print("push: 구독 없음 (push_subs.json 비어 있음) → 건너뜀"); return
     if "--test" in sys.argv:
-        new = [{"symbol": "investool", "rule": "테스트", "text": "알림 연결 확인 — 이게 보이면 끝."}]
+        new = [{"symbol": "investool", "rule": "테스트", "tag": "stop", "title": "investool · 시험 알림", "body": "이 기기에서 이 알림이 보이면 연결 완료예요."}]
     else:
         al = json.loads((OUT / "alerts.json").read_text(encoding="utf-8"))
         new = al.get("new") or []
+    prefs = load_prefs()
+    skipped = [a for a in new if not prefs.get(a.get("tag", "etc"), True)]
+    new = [a for a in new if prefs.get(a.get("tag", "etc"), True)]
+    if skipped:
+        print(f"push: 설정으로 끈 알림 {len(skipped)}건 건너뜀")
     if not new:
         print("push: 새 알림 없음"); return
     names = json.loads((ROOT / "positions.json").read_text(encoding="utf-8")).get("names", {})
     sent = 0
     for a in new:
-        title = f"{names.get(a['symbol'], a['symbol'])} · {a['rule']}"
-        payload = json.dumps({"title": title, "body": a["text"][:160], "url": f"./#/t/{a['symbol']}"}, ensure_ascii=False)
+        title = a.get("title") or f"{names.get(a['symbol'], a['symbol'])} · {a['rule']}"
+        body = a.get("body") or a.get("text", "")
+        payload = json.dumps({"title": title, "body": body[:180], "url": f"./#/t/{a['symbol']}", "tag": a.get("tag", "")}, ensure_ascii=False)
         for s in subs:
             try:
                 webpush(subscription_info=s, data=payload, vapid_private_key=vpriv, vapid_claims={"sub": subj}, ttl=3600)

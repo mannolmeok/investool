@@ -4,6 +4,7 @@
 """
 import json
 from pathlib import Path
+from datetime import datetime, timezone, timedelta
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "out"
@@ -46,7 +47,8 @@ def main():
             files[f"out/{s}.json"] = v
     csv = {s: tail_csv(s) for s in wl + CTX}
     asof = max((v.get("asof", "") for k, v in files.items() if k.startswith("out/") and isinstance(v, dict) and "asof" in v), default="")
-    out = {"asof": asof, "watchlist": wl, "files": files, "csv": csv}
+    built = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M")  # 앱 설정 '마지막 갱신'
+    out = {"asof": asof, "built": built, "watchlist": wl, "files": files, "csv": csv}
     # 종목명 사전: 포지션 이름 + 스크리너 + 검색 기록 → out/names.json (스크리너·검색으로 들어간 종목도 이름으로 보이게)
     names = dict((rd("positions.json") or {}).get("names", {}))
     for r in (rd("out/screener.json") or {}).get("rows", []):

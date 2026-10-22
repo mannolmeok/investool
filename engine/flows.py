@@ -53,8 +53,39 @@ def analyze(code):
     if abs(fs) >= 3: bits.append(f"외국인 {abs(fs)}일 연속 {'순매수' if fs > 0 else '순매도'}")
     if abs(os_) >= 3: bits.append(f"기관 {abs(os_)}일 연속 {'순매수' if os_ > 0 else '순매도'}")
     if hr_chg is not None and abs(hr_chg) >= 0.3: bits.append(f"외국인 보유율 60일 {hr_chg:+.2f}%p")
+    # v3.1: 문장을 둘로 — 60일 큰 흐름 / 최근 며칠 (한 문장에 섞어 쓰면 '사는 중'인지 '파는 중'인지 헷갈림)
+    big, recent = big_recent(fo60, fo5, sm, fs, os_)
     return {"asof": daily[-1]["d"], "daily": daily, "cum": cum, "sum": sm, "fo": {"5": fo5, "20": fo20, "60": fo60},
-            "streak": {"f": fs, "o": os_}, "hold": {"now": hr[-1] if hr else None, "chg60": hr_chg}, "state": state, "tone": tone, "sentence": " · ".join(bits)}
+            "streak": {"f": fs, "o": os_}, "hold": {"now": hr[-1] if hr else None, "chg60": hr_chg}, "state": state, "tone": tone,
+            "big": big, "recent": recent, "sentence": " · ".join(bits)}
+
+
+def _eok(v):
+    a = abs(v)
+    s = f"{a/10000:.1f}조" if a >= 10000 else f"{int(a + 0.5):,}억"
+    return ("+" if v > 0 else "\u2212" if v < 0 else "") + s
+
+
+def big_recent(fo60, fo5, sm, fs, os_):
+    """60일 큰 흐름 한 줄 + 최근 며칠 한 줄"""
+    big = (f"60일 큰 흐름 — 외국인·기관이 사는 쪽 ({_eok(fo60)}), 개인 {_eok(sm['i']['60'])}" if fo60 > 0
+           else f"60일 큰 흐름 — 외국인·기관이 파는 쪽 ({_eok(fo60)}), 개인 {_eok(sm['i']['60'])}")
+    r5 = f"5일 동안 {'사는 쪽' if fo5 > 0 else '파는 쪽'} ({_eok(fo5)})"
+    who = []
+    for nm, st in (("외국인", fs), ("기관", os_)):
+        if abs(st) >= 3:
+            who.append(f"{nm} {abs(st)}일 연속 {'순매수' if st > 0 else '순매도'}")
+    if not who:
+        buy = [nm for nm, st in (("외국인", fs), ("기관", os_)) if st > 0]
+        sell = [nm for nm, st in (("외국인", fs), ("기관", os_)) if st < 0]
+        if buy and sell:
+            who.append(f"마지막 날은 {'·'.join(buy)} 사고 {'·'.join(sell)} 팔았어요")
+        elif buy:
+            who.append(f"마지막 날은 {'·'.join(buy)} 모두 샀어요" if len(buy) > 1 else f"마지막 날은 {buy[0]}이 샀어요")
+        elif sell:
+            who.append(f"마지막 날은 {'·'.join(sell)} 모두 팔았어요" if len(sell) > 1 else f"마지막 날은 {sell[0]}이 팔았어요")
+    recent = "최근 며칠 — " + " · ".join([r5] + who)
+    return big, recent
 
 
 def main():

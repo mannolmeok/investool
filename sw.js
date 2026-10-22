@@ -2,7 +2,7 @@
    - 같은 사이트 파일: 캐시에 있으면 즉시 응답, 동시에 네트워크로 새 버전 받아 캐시 교체
    - 새 버전이 실제로 달라졌으면(out/·data/·config) 열린 화면에 'updated' 알림 → 앱이 조용히 다시 그림
    - 처음 여는 파일은 네트워크에서 받음 */
-const V = 'investool-v31';
+const V = 'investool-v40';
 const SHELL = ['./', './index.html', './app.js', './engine.js', './config.js', './manifest.webmanifest', './vendor/lightweight-charts.standalone.production.js'];
 // GitHub Pages 는 10분 HTTP 캐시를 붙임 → 설치·갱신 때는 브라우저 캐시를 건너뛰고 서버에서 새로 받는다
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())); });
