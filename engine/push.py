@@ -5,7 +5,8 @@
 선택: SUPABASE_URL/SUPABASE_SERVICE_KEY 가 있으면 그 테이블 구독도 합쳐서 보냄.
 동작: out/alerts.json 의 new[] 만 전송. 설정이 없으면 조용히 건너뜀.
       push_prefs.json (앱 설정 → 알림 스위치) 으로 종류별 끄기: {"go":true,"near":true,"flow":true,"etc":true}
-      손절(stop)은 끌 수 없음. 제목 = "종목 · 상태", 본문 = 가격 하나와 할 일.
+      종목별 끄기: "mute": ["SYM", ...] (앱 내 종목 → ⋯ → 이 종목 알림 끄기)
+      손절(stop)은 끌 수 없음 — 종목을 꺼도 손절 알림은 간다. 제목 = "종목 · 상태", 본문 = 가격 하나와 할 일.
 사용: python engine/push.py            (새 알림 전송)
       python engine/push.py --test     (테스트 알림 1건)
 """
@@ -46,6 +47,7 @@ def load_prefs():
     pr = {"go": True, "near": True, "flow": True, "etc": True}
     pr.update({k: bool(v) for k, v in d.items() if k in pr})
     pr["stop"] = True  # 손절 알림은 끌 수 없음
+    pr["mute"] = set(d.get("mute") or []) if isinstance(d.get("mute"), list) else set()
     return pr
 
 
@@ -67,8 +69,9 @@ def main():
         al = json.loads((OUT / "alerts.json").read_text(encoding="utf-8"))
         new = al.get("new") or []
     prefs = load_prefs()
-    skipped = [a for a in new if not prefs.get(a.get("tag", "etc"), True)]
-    new = [a for a in new if prefs.get(a.get("tag", "etc"), True)]
+    ok = lambda a: (prefs.get(a.get("tag", "etc"), True) and a.get("symbol") not in prefs["mute"]) or a.get("tag") == "stop"
+    skipped = [a for a in new if not ok(a)]
+    new = [a for a in new if ok(a)]
     if skipped:
         print(f"push: 설정으로 끈 알림 {len(skipped)}건 건너뜀")
     if not new:

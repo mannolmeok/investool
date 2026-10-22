@@ -5,6 +5,10 @@ action
   sell   : 매도. 실현손익·R배수 기록. 다 팔면 관찰 종목으로 돌림
   set    : 손절선·장기 손절선·목표가·구분(lot)·메모 변경
   remove : 포지션 항목 삭제 (관심 종목은 그대로)
+  note   : 관심 종목 메모(왜 보나) — notes.json            {"action":"note","symbol":"X","memo":"..."}
+  mute   : 이 종목 푸시 끄기/켜기 — push_prefs.json mute  {"action":"mute","symbol":"X","on":true}
+  unwatch: 관심 종목에서 빼기 — watchlist.txt 에서 지우고 watch_hide.json 에 기록(발굴이 다시 넣지 않게)
+  (note · mute · unwatch 는 매매 기록(trades.json)에 남기지 않는다)
 trades.json: [{id, date, symbol, name, side, qty, price, amount, stop, avg_before, realized, r, memo, rule}]
 """
 import json, sys, uuid
@@ -14,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 KST = timezone(timedelta(hours=9))
 WATCH_TAG = "# --- 스크리너 (자동 · 주 1회 교체) ---"
+HIDE = "watch_hide.json"
 
 
 def load(p, default):
@@ -29,7 +34,14 @@ def fnum(x):
     return None if x in (None, "", "null") else float(x)
 
 
+def unhide(sym):
+    h = load(HIDE, [])
+    if sym in h:
+        save(HIDE, [x for x in h if x != sym])
+
+
 def ensure_watch(sym):
+    unhide(sym)  # 직접 다시 넣으면 숨김 목록에서 뺀다
     wl = ROOT / "watchlist.txt"
     lines = wl.read_text().splitlines()
     if WATCH_TAG in lines and sym in [l.strip() for l in lines[lines.index(WATCH_TAG):]]:
@@ -58,6 +70,37 @@ def main(op):
     today = op.get("date") or datetime.now(KST).strftime("%Y-%m-%d")
     qty, price = fnum(op.get("qty")), fnum(op.get("price"))
     tr = {"id": op.get("id") or uuid.uuid4().hex[:10], "date": today, "symbol": sym, "name": name, "side": act, "memo": op.get("memo", "")}
+
+    if act in ("note", "mute", "unwatch"):
+        if act == "note":
+            notes = load("notes.json", {})
+            memo = (op.get("memo") or "").strip()
+            if memo:
+                notes[sym] = memo[:200]
+            else:
+                notes.pop(sym, None)
+            save("notes.json", notes)
+        elif act == "mute":
+            pr = load("push_prefs.json", {})
+            mute = [x for x in pr.get("mute", []) if x != sym]
+            if op.get("on", True) not in (False, "false", 0, "0"):
+                mute.append(sym)
+            pr["mute"] = sorted(set(mute))
+            save("push_prefs.json", pr)
+        else:
+            assert not (pos and pos.get("qty")), "보유 중인 종목은 관심 종목에서 뺄 수 없어요"
+            wl = ROOT / "watchlist.txt"
+            wl.write_text("\n".join(l for l in wl.read_text().splitlines() if l.strip() != sym) + "\n")
+            if pos:  # 관찰 포지션(진입 조건 등)도 같이 정리
+                cfg["positions"] = [p for p in cfg["positions"] if p["symbol"] != sym]
+                save("positions.json", cfg)
+            h = load(HIDE, [])
+            if sym not in h:
+                save(HIDE, h + [sym])
+        if op.get("name"):
+            save("positions.json", cfg)  # 이름 사전만 갱신
+        print("OK", act, sym)
+        return sym
 
     if act == "buy":
         assert qty and qty > 0 and price and price > 0, "수량·가격 필요"

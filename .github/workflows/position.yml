@@ -1,10 +1,10 @@
 name: position
-run-name: "매매: ${{ inputs.op }}"
+run-name: "기록: ${{ inputs.op }}"
 on:
   workflow_dispatch:
     inputs:
       op:
-        description: '예) {"action":"buy","symbol":"INFQ","qty":100,"price":8.8,"stop":8.4}'
+        description: '예) {"action":"buy","symbol":"INFQ","qty":100,"price":8.8,"stop":8.4} · note · mute · unwatch'
         required: true
 permissions: { contents: write }
 concurrency: { group: investool-write, cancel-in-progress: false }
@@ -29,6 +29,6 @@ jobs:
           python engine/bundle.py
       - run: |
           git config user.name investool-bot; git config user.email bot@investool
-          git add -A positions.json trades.json watchlist.txt logos data out
+          git add -A positions.json trades.json watchlist.txt notes.json push_prefs.json watch_hide.json logos data out
           git commit -m "position: $(date -u +%F)" || exit 0
           git pull --rebase -X theirs && git push

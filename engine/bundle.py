@@ -29,9 +29,12 @@ def tail_csv(sym, n=40):
 
 
 def main():
-    wl = [s.strip() for s in (ROOT / "watchlist.txt").read_text().splitlines() if s.strip() and not s.startswith("#")]
+    lines = (ROOT / "watchlist.txt").read_text().splitlines()
+    wl = [s.strip() for s in lines if s.strip() and not s.startswith("#")]
+    tag = next((i for i, l in enumerate(lines) if l.startswith("# --- 스크리너")), None)
+    auto = [s.strip() for s in lines[tag + 1:] if s.strip() and not s.startswith("#")] if tag is not None else []
     files = {}
-    for f in ("out/judgement.json", "out/attribution.json", "out/alerts.json", "events.json"):
+    for f in ("out/judgement.json", "out/attribution.json", "out/alerts.json", "events.json", "notes.json", "push_prefs.json"):
         v = rd(f)
         if v is not None:
             files[f] = v
@@ -48,7 +51,7 @@ def main():
     csv = {s: tail_csv(s) for s in wl + CTX}
     asof = max((v.get("asof", "") for k, v in files.items() if k.startswith("out/") and isinstance(v, dict) and "asof" in v), default="")
     built = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M")  # 앱 설정 '마지막 갱신'
-    out = {"asof": asof, "built": built, "watchlist": wl, "files": files, "csv": csv}
+    out = {"asof": asof, "built": built, "watchlist": wl, "auto": auto, "files": files, "csv": csv}
     # 종목명 사전: 포지션 이름 + 스크리너 + 검색 기록 → out/names.json (스크리너·검색으로 들어간 종목도 이름으로 보이게)
     names = dict((rd("positions.json") or {}).get("names", {}))
     for r in (rd("out/screener.json") or {}).get("rows", []):

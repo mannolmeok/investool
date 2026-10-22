@@ -24,6 +24,6 @@ jobs:
       - run: python engine/analyze_one.py "${{ inputs.q }}" ${{ inputs.add && '--add' || '' }}
       - run: |
           git config user.name investool-bot; git config user.email bot@investool
-          git add -A logos data out positions.json watchlist.txt
+          git add -A logos data out positions.json watchlist.txt watch_hide.json
           git commit -m "analyze: ${{ inputs.q }}" || exit 0
           git pull --rebase -X theirs && git push

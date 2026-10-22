@@ -260,7 +260,9 @@ def update_watch(top, k):
     else:
         head = lines
     keep = [l for l in head if l.strip()]
-    pool = [r for r in top if not r.get("gov_flags") and r["cap"] >= 5000]
+    hf = ROOT / "watch_hide.json"
+    hide = set(json.loads(hf.read_text(encoding="utf-8") or "[]")) if hf.exists() else set()  # 앱에서 뺀 종목
+    pool = [r for r in top if not r.get("gov_flags") and r["cap"] >= 5000 and r["symbol"] not in hide]
     picks = sorted(pool, key=lambda r: (not r["awake"], -r["score"]))[:k]
     new = [r["symbol"] for r in picks if r["symbol"] not in keep]
     wl.write_text("\n".join(keep + ["", WATCH_TAG] + new) + "\n")

@@ -20,9 +20,10 @@ jobs:
           python3 - <<'PY'
           import json, os
           d = json.loads(os.environ["P"])
-          keep = {k: bool(d[k]) for k in ("go", "near", "flow", "etc") if k in d}
-          open("push_prefs.json", "w", encoding="utf-8").write(json.dumps(keep, ensure_ascii=False, indent=1) + "\n")
-          print(keep)
+          cur = json.load(open("push_prefs.json", encoding="utf-8")) if os.path.exists("push_prefs.json") else {}
+          cur.update({k: bool(d[k]) for k in ("go", "near", "flow", "etc") if k in d})  # 종목별 끄기(mute)는 그대로 둔다
+          open("push_prefs.json", "w", encoding="utf-8").write(json.dumps(cur, ensure_ascii=False, indent=1) + "\n")
+          print(cur)
           PY
       - run: |
           git config user.name investool-bot; git config user.email bot@investool
