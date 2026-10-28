@@ -1,8 +1,9 @@
 name: daily-lines
 on:
   schedule:
-    # 정시 실행은 Cloudflare 정시 알람(15:43 · 06:13 KST)이 맡음. 아래는 그게 실패했을 때를 위한 늦은 예비
-    - cron: "43 9 * * 1-5"   # 18:43 KST 예비
+    # 정시 실행은 Cloudflare 정시 알람(16:13 · 06:13 KST)이 맡음. 아래는 그게 없거나 실패했을 때의 예비 (GitHub 예약은 보통 몇 시간 늦음)
+    # 국내 예비는 일찍 걸어 둠: 자정(KST)을 넘기면 야후가 그날 국내 일봉을 아침까지 빼 둠 (그땐 fetch.py 가 직접 만듦)
+    - cron: "13 7 * * 1-5"   # 16:13 KST 예비
     - cron: "43 23 * * 1-5"  # 08:43 KST 예비
   workflow_dispatch:
 permissions:

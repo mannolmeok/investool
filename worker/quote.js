@@ -4,7 +4,7 @@
 //  /f?s=005930.KS               수급 60일 (외국인·기관·개인 순매수, 국내만)
 //  /s?q=한화에어로              종목 검색 (국내 이름·코드 → 야후 심볼)
 //  정시 알람(Cron Triggers): 정해진 시각에 GitHub 배치(daily.yml)를 깨움 — 비밀값 GH_TOKEN 필요
-//    43 6 * * 1-5  → 15:43 KST 국내 마감 후   ·   13 21 * * 1-5 → 06:13 KST 미국 마감 후(서머타임 무관)
+//    13 7 * * 1-5  → 16:13 KST 국내 마감 후(야후 국내 시세 20분 지연 → 15:55 이후라야 확정 종가)   ·   13 21 * * 1-5 → 06:13 KST 미국 마감 후(서머타임 무관)
 const OK_SYM = /^(\d{6}\.(KS|KQ)|[A-Z][A-Z0-9.\-]{0,9}|\^[A-Z0-9]{2,8})$/;
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Content-Type': 'application/json; charset=utf-8' };
 const UA = { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', 'Referer': 'https://m.stock.naver.com/' };

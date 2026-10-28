@@ -3,40 +3,92 @@
       python engine/fetch.py INFQ 005930.KS
 국내는 야후 심볼 규칙: 코스피 .KS / 코스닥 .KQ
 """
-import sys, json, time
+import sys, json, time, statistics
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import urllib.request, urllib.parse
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 URL = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=1y"
+H5 = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=60m&range=5d"
 UA = {"User-Agent": "Mozilla/5.0 (investool daily batch)"}
+KST = timezone(timedelta(hours=9))
+# 야후 국내 시세는 20분 지연 → 마감 직후 25분 안에는 마지막 봉이 아직 확정 종가가 아닐 수 있음
+# (10/20 15:40 실행: 삼성전자 210,750 → 15:53 실행: 확정 211,500)
+DELAY = 25 * 60
+FILLED = []  # 이번 실행에서 직접 만든 국내 일봉 (배치 끝에 한 줄 알림)
+
+
+def _chart(u):
+    with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=30) as r:
+        return json.load(r)["chart"]["result"][0]
+
+
+def kr_missing_day(meta, have, now=None):
+    """야후는 한국 시간 자정이 지나면 그날 국내 일봉을 빼 두었다가 다음 날 아침(7~8시쯤) 확정본을 다시 넣는다.
+    (git 기록: 21:15 · 23:29 · 23:42 실행엔 그날 봉 있음 / 00:34 · 00:44 · 01:21 · 02:26 실행엔 없음 / 07:52 이후 다시 있음)
+    그 사이 배치가 돌면 국내 판단이 하루 밀린다 → 마지막 거래일이 빠졌으면 그 날짜를 돌려준다.  have: {날짜: 거래량}"""
+    rt = meta.get("regularMarketTime")
+    if not rt:
+        return None
+    t0 = datetime.fromtimestamp(rt, KST)
+    day = t0.strftime("%Y-%m-%d")
+    if day in have or (have and day < max(have)):
+        return None
+    if (now or datetime.now(KST)) < t0.replace(hour=17, minute=0, second=0, microsecond=0):  # 마감(15:30, 수능날 16:30) + 지연 여유
+        return None
+    return day
+
+
+def kr_bar(day, meta, hourly, have):
+    """빠진 국내 일봉 만들기 — 종가·고가·저가·거래량 = meta(마지막 거래일 값), 시가 = 그날 첫 1시간봉.
+    meta 가 비면 1시간봉으로 (1시간봉엔 동시호가 거래량이 빠져 합이 일봉의 약 78% → 최근 며칠 일봉÷1시간봉 비율로 보정).
+    다음 배치에서 야후 확정본이 오면 같은 날짜로 그대로 덮어쓴다.  반환 (o, h, l, c, v, 거래량 출처) | None"""
+    q, ts = hourly["indicators"]["quote"][0], hourly.get("timestamp") or []
+    by = {}
+    for i, t in enumerate(ts):
+        c = q["close"][i]
+        if not c or c <= 0:
+            continue
+        d = datetime.fromtimestamp(t, KST).strftime("%Y-%m-%d")
+        by.setdefault(d, []).append((q["open"][i] or c, q["high"][i] or c, q["low"][i] or c, c, q["volume"][i] or 0))
+    bars = by.get(day)
+    if not bars:
+        return None
+    o = bars[0][0]
+    c = meta.get("regularMarketPrice") or bars[-1][3]
+    h = max(meta.get("regularMarketDayHigh") or 0, max(b[1] for b in bars), o, c)
+    lows = [x for x in (meta.get("regularMarketDayLow"),) if x and x > 0] + [b[2] for b in bars]
+    l = min(lows + [o, c])
+    hv = sum(b[4] for b in bars)
+    mv = meta.get("regularMarketVolume") or 0
+    if mv and mv >= hv:
+        return o, h, l, c, int(mv), "meta"
+    rs = [have[d] / s for d, bb in by.items() if d != day and len(bb) >= 6 and have.get(d) and (s := sum(b[4] for b in bb)) > 0]  # 온전한 날만
+    return o, h, l, c, int(round(hv * (statistics.median(rs) if rs else 1.28))), "추정"
 
 
 def fetch(sym: str) -> int:
-    req = urllib.request.Request(URL.format(sym=urllib.parse.quote(sym)), headers=UA)
-    with urllib.request.urlopen(req, timeout=30) as r:
-        j = json.load(r)
-    res = j["chart"]["result"][0]
+    res = _chart(URL.format(sym=urllib.parse.quote(sym)))
     q = res["indicators"]["quote"][0]
-    ts = res["timestamp"]
-    # 장중이면 마지막 봉은 아직 '종가'가 아님 → 버린다 (종가 기준 원칙)
+    ts = res.get("timestamp") or []
+    # 장중이면 마지막 봉은 아직 '종가'가 아님 → 버린다 (종가 기준 원칙). 마감 직후 지연 구간도 같이
     meta = res.get("meta", {})
     reg = (meta.get("currentTradingPeriod") or {}).get("regular") or {}
     now = int(time.time())
-    if ts and reg and reg.get("start", 0) <= now < reg.get("end", 0) and ts[-1] >= reg.get("start", 0):
+    if ts and reg and reg.get("start", 0) <= now < reg.get("end", 0) + DELAY and ts[-1] >= reg.get("start", 0):
         ts = ts[:-1]
         for k in q: q[k] = q[k][:-1]
-        print(f"{sym}: 장중 → 마지막 봉 제외")
+        print(f"{sym}: 장중(또는 마감 직후 지연 구간) → 마지막 봉 제외")
     krw = sym.endswith((".KS", ".KQ"))
+    fm = (lambda v: f"{round(v):d}") if krw else (lambda v: f"{v:.2f}")
     rows = ["date,open,high,low,close,volume"]
     for i, t in enumerate(ts):
         if q["close"][i] is None:
             continue
         d = datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%d")
-        f = (lambda v: f"{round(v):d}") if krw else (lambda v: f"{v:.2f}")
-        rows.append(f"{d},{f(q['open'][i])},{f(q['high'][i])},{f(q['low'][i])},{f(q['close'][i])},{int(q['volume'][i] or 0)}")
+        rows.append(f"{d},{fm(q['open'][i])},{fm(q['high'][i])},{fm(q['low'][i])},{fm(q['close'][i])},{int(q['volume'][i] or 0)}")
     DATA.mkdir(exist_ok=True)
     f = DATA / f"{sym}.csv"
     # 야후가 가끔 최근 봉을 빠뜨린 채 응답 → 기존 파일의 더 최신 봉은 지우지 않고 합친다 (날짜 기준, 같은 날은 새 값)
@@ -52,6 +104,19 @@ def fetch(sym: str) -> int:
             merged = old
         # 1년 창 유지: 새 응답 범위 + 그 이후 기존 봉
         rows = [rows[0]] + [merged[d] for d in sorted(merged)]
+    # 국내(지수 포함): 자정~아침 사이엔 야후가 마지막 거래일 일봉을 빼 둠 → 직접 만들어 붙인다
+    if krw or meta.get("exchangeTimezoneName") == "Asia/Seoul":
+        try:
+            have = {l.split(",")[0]: float(l.split(",")[5]) for l in rows[1:]}
+            day = kr_missing_day(meta, have)
+            b = day and kr_bar(day, meta, _chart(H5.format(sym=urllib.parse.quote(sym))), have)
+            if b:
+                o, h, l, c, v, src = b
+                rows.append(f"{day},{fm(o)},{fm(h)},{fm(l)},{fm(c)},{v}")
+                FILLED.append(f"{sym} {day} 종가 {fm(c)} · 거래량 {v:,} ({src})")
+                print(f"{sym}: 야후 일봉에 {day} 없음 → 직접 만듦 (종가 {fm(c)}, 거래량 {src})")
+        except Exception as e:  # 보충 실패가 원래 수집을 막지 않게
+            print(f"{sym}: 국내 일봉 보충 실패 {e!r}"[:160])
     f.write_text("\n".join(rows) + "\n", encoding="utf-8")
     return len(rows) - 1
 
@@ -123,3 +188,5 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"{s}.{tf}: FAIL {e}")
             time.sleep(0.5)
+    if FILLED:  # GitHub 실행 화면(요약)에 한 줄로 — 다음 날 아침 야후 확정본과 비교용
+        print(f"::notice title=국내 일봉 직접 만듦 {len(FILLED)}종목::" + "%0A".join(FILLED))

@@ -14,7 +14,8 @@
 - `engine/push.py` — 웹 푸시 전송(설정 없으면 건너뜀) · 종류별 끄기 `push_prefs.json`(앱 설정 → `prefs.yml`) · 연결법 `docs_push_setup.md`
 - `engine/run_daily.py` — 위 전부 + `out/summary.md`
 - **앱(PWA) v3.2**: `index.html` `app.js` — 홈(오늘 할 일) / 내 종목(포트폴리오 · 관심 종목) / 발굴 / 기록 / 알림·설정 / 종목(결론 · 조건표 · 가격 지도 · 근거 탭). 모바일 1열 + 아래 탭 5칸 · PC는 접히는 목록 + 큰 차트, 발굴·알림·기록은 목록 + 오른쪽 상세. GitHub Pages로 서빙 — 디자인 원칙은 `DESIGN_NOTES.md`
-- GitHub Actions: 평일 15:40 KST(국내 마감) / 05:10 KST(미국 마감) 자동 실행 후 `out/` 커밋
+- GitHub Actions: 평일 16:13 KST(국내 마감) / 06:13 KST(미국 마감)에 Cloudflare 정시 알람이 배치를 깨우고 `out/` 커밋 (GitHub 예약 16:13 · 08:43 KST는 예비, 보통 몇 시간 늦음)
+  - 야후는 자정(KST)~아침 사이 그날 국내 일봉을 빼 둠 → 그 사이 돌면 `fetch.py`가 시세 정보(종가·고가·저가·거래량) + 첫 1시간봉(시가)으로 직접 만들고, 다음 배치의 야후 확정본으로 덮어씀
 
 ## 파일로 조정하는 것
 - `watchlist.txt` 관심 종목 · `context.txt` 지수/업종 대리 · `positions.json` 보유·규칙·한글명 · `sectors.json` 종목별 지수/피어 · `events.json` 일정
