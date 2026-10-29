@@ -6480,5 +6480,20 @@
 }
 ],
 "chip": "wait"
+},
+{
+"sym": "INFQ",
+"asof": "2026-10-28",
+"close": 9.63,
+"krw": false,
+"src": "실시간",
+"preds": [
+{
+"kind": "추세선",
+"price": 9.84,
+"slope": -0.004000000000000092
+}
+],
+"chip": "target"
 }
 ]
