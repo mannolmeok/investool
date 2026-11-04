@@ -10,7 +10,7 @@
 "애매": 11,
 "반응": 37,
 "진행 중": 28,
-"대기": 3
+"대기": 4
 }
 },
 "천장": {
@@ -28,18 +28,18 @@
 },
 "추세선": {
 "raw": {
-"못 넘음": 118,
+"못 넘음": 119,
 "돌파": 137,
 "대기": 75
 },
-"n_ret": 95,
-"avg_ret_after": -0.23,
-"win": 35
+"n_ret": 97,
+"avg_ret_after": -0.5,
+"win": 34
 },
 "더미 받침": {
-"n": 605,
-"good": 285,
-"pct": 47
+"n": 608,
+"good": 281,
+"pct": 46
 },
 "기간": {
 "from": "2026-09-15",
@@ -49,6 +49,30 @@
 "horizon": 5
 },
 "rows": [
+{
+"sym": "INFQ",
+"asof": "2026-11-03",
+"close": 8.44,
+"krw": false,
+"src": "실시간",
+"n_after": 0,
+"chip": "exit",
+"preds": [
+{
+"kind": "받침",
+"price": 8.4325,
+"lines": [
+"수평 지지(2회)",
+"전저점"
+]
+},
+{
+"kind": "추세선",
+"price": 9.0048,
+"slope": -0.2088
+}
+]
+},
 {
 "sym": "277810.KQ",
 "asof": "2026-11-03",
@@ -281,7 +305,8 @@
 "close": 8.15,
 "krw": false,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": 3.56,
 "chip": "exit",
 "preds": [
 {
@@ -290,12 +315,14 @@
 "lines": [
 "52주 저점",
 "최근 저가"
-]
+],
+"result": "대기"
 },
 {
 "kind": "추세선",
 "price": 9.2136,
-"slope": -0.2088
+"slope": -0.2088,
+"result": "대기"
 }
 ]
 },
@@ -542,7 +569,7 @@
 "close": 8.88,
 "krw": false,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": -8.22,
 "chip": "hold",
 "preds": [
@@ -914,7 +941,7 @@
 "close": 9.43,
 "krw": false,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -5.83,
 "chip": "target",
 "preds": [
@@ -1201,7 +1228,7 @@
 "close": 9.63,
 "krw": false,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": -2.08,
 "chip": "target",
 "preds": [
@@ -1514,15 +1541,16 @@
 "close": 9.74,
 "krw": false,
 "src": "실시간",
-"n_after": 4,
+"n_after": 5,
 "ret1": -1.13,
+"ret5": -13.35,
 "chip": "target",
 "preds": [
 {
 "kind": "추세선",
 "price": 9.8,
 "slope": -0.04699999999999989,
-"result": "대기"
+"result": "못 넘음"
 }
 ]
 },
@@ -1791,7 +1819,8 @@
 "price": 8.482,
 "slope": -0.28600000000000003,
 "result": "돌파",
-"break_day": 1
+"break_day": 1,
+"ret_after": -13.35
 }
 ]
 },
@@ -2531,7 +2560,8 @@
 "price": 9.33,
 "slope": -0.030000000000000072,
 "result": "돌파",
-"break_day": 3
+"break_day": 3,
+"ret_after": -13.35
 }
 ]
 },
@@ -5695,6 +5725,7 @@
 "n_after": 5,
 "ret1": -7.18,
 "ret5": -19.46,
+"ret20": -32.7,
 "preds": [
 {
 "kind": "추세선",
