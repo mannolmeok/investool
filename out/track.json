@@ -1,54 +1,254 @@
 {
 "summary": {
 "받침": {
-"n": 82,
-"good": 39,
+"n": 83,
+"good": 40,
 "pct": 48,
 "raw": {
 "안 옴": 5,
 "이탈": 32,
 "애매": 11,
-"반응": 39,
-"진행 중": 30,
+"반응": 40,
+"진행 중": 31,
 "대기": 5
 }
 },
 "천장": {
-"n": 79,
-"good": 53,
-"pct": 67,
+"n": 80,
+"good": 54,
+"pct": 68,
 "raw": {
 "돌파": 16,
-"막힘": 53,
+"막힘": 54,
 "애매": 10,
 "진행 중": 27,
-"안 옴": 8,
-"대기": 4
+"대기": 5,
+"안 옴": 8
 }
 },
 "추세선": {
 "raw": {
-"못 넘음": 123,
-"돌파": 152,
-"대기": 68
+"못 넘음": 127,
+"돌파": 156,
+"대기": 71
 },
-"n_ret": 103,
-"avg_ret_after": -1.18,
+"n_ret": 104,
+"avg_ret_after": -1.33,
 "win": 32
 },
 "더미 받침": {
-"n": 619,
-"good": 272,
+"n": 628,
+"good": 275,
 "pct": 44
 },
 "기간": {
 "from": "2026-09-15",
-"to": "2026-11-04",
+"to": "2026-11-05",
 "실시간_시작": "2026-10-19"
 },
 "horizon": 5
 },
 "rows": [
+{
+"sym": "277810.KQ",
+"asof": "2026-11-05",
+"close": 334500.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "wait",
+"preds": [
+{
+"kind": "추세선",
+"price": 382857.1429,
+"slope": -4357.142857142857
+}
+]
+},
+{
+"sym": "259960.KS",
+"asof": "2026-11-05",
+"close": 221000.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "enter",
+"preds": [
+{
+"kind": "천장",
+"price": 222954.6667,
+"lines": [
+"수평 저항(3회)",
+"피보 38.2%"
+]
+},
+{
+"kind": "추세선",
+"price": 203100.0,
+"slope": -33.333333333333336
+}
+]
+},
+{
+"sym": "214450.KQ",
+"asof": "2026-11-05",
+"close": 225000.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "enter",
+"preds": [
+{
+"kind": "추세선",
+"price": 214125.0,
+"slope": -5062.5
+}
+]
+},
+{
+"sym": "195870.KS",
+"asof": "2026-11-05",
+"close": 37400.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "wait",
+"preds": [
+{
+"kind": "추세선",
+"price": 49262.5,
+"slope": -906.25
+}
+]
+},
+{
+"sym": "120110.KS",
+"asof": "2026-11-05",
+"close": 39650.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "wait",
+"preds": [
+{
+"kind": "추세선",
+"price": 42750.0,
+"slope": -270.0
+}
+]
+},
+{
+"sym": "083650.KQ",
+"asof": "2026-11-05",
+"close": 38300.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "enter",
+"preds": [
+{
+"kind": "받침",
+"price": 37712.0038,
+"lines": [
+"볼린저 하단",
+"최근 저가"
+]
+},
+{
+"kind": "추세선",
+"price": 37376.9231,
+"slope": -1146.1538461538462
+}
+]
+},
+{
+"sym": "017960.KS",
+"asof": "2026-11-05",
+"close": 15320.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "enter",
+"preds": [
+{
+"kind": "추세선",
+"price": 13666.0,
+"slope": -354.0
+}
+]
+},
+{
+"sym": "010140.KS",
+"asof": "2026-11-05",
+"close": 16960.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "wait",
+"preds": [
+{
+"kind": "추세선",
+"price": 16965.5556,
+"slope": -162.77777777777777
+}
+]
+},
+{
+"sym": "005930.KS",
+"asof": "2026-11-05",
+"close": 201500.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "exit",
+"preds": [
+{
+"kind": "천장",
+"price": 203750.0,
+"lines": [
+"전저점",
+"수평 저항(2회)"
+]
+},
+{
+"kind": "추세선",
+"price": 222750.0,
+"slope": -5250.0
+}
+]
+},
+{
+"sym": "001120.KS",
+"asof": "2026-11-05",
+"close": 36350.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "wait",
+"preds": [
+{
+"kind": "추세선",
+"price": 41006.25,
+"slope": -243.75
+}
+]
+},
+{
+"sym": "000660.KS",
+"asof": "2026-11-05",
+"close": 1264000.0,
+"krw": true,
+"src": "실시간",
+"n_after": 0,
+"chip": "wait",
+"preds": [
+{
+"kind": "추세선",
+"price": 1448250.0,
+"slope": -27750.0
+}
+]
+},
 {
 "sym": "INFQ",
 "asof": "2026-11-04",
@@ -79,7 +279,8 @@
 "close": 347000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -3.6,
 "chip": "wait",
 "preds": [
 {
@@ -88,12 +289,14 @@
 "lines": [
 "수평 지지(2회)",
 "전저점"
-]
+],
+"result": "진행 중"
 },
 {
 "kind": "추세선",
 "price": 387214.2857,
-"slope": -4357.142857142857
+"slope": -4357.142857142857,
+"result": "대기"
 }
 ]
 },
@@ -103,13 +306,16 @@
 "close": 212000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": 4.25,
 "chip": "enter",
 "preds": [
 {
 "kind": "추세선",
 "price": 203133.3333,
-"slope": -33.333333333333336
+"slope": -33.333333333333336,
+"result": "돌파",
+"break_day": 1
 }
 ]
 },
@@ -119,13 +325,16 @@
 "close": 223500.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": 0.67,
 "chip": "enter",
 "preds": [
 {
 "kind": "추세선",
 "price": 219187.5,
-"slope": -5062.5
+"slope": -5062.5,
+"result": "돌파",
+"break_day": 1
 }
 ]
 },
@@ -135,13 +344,15 @@
 "close": 44250.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -15.48,
 "chip": "wait",
 "preds": [
 {
 "kind": "추세선",
 "price": 50168.75,
-"slope": -906.25
+"slope": -906.25,
+"result": "대기"
 }
 ]
 },
@@ -151,13 +362,15 @@
 "close": 41000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -3.29,
 "chip": "wait",
 "preds": [
 {
 "kind": "추세선",
 "price": 41300.0,
-"slope": 60.0
+"slope": 60.0,
+"result": "대기"
 }
 ]
 },
@@ -167,13 +380,16 @@
 "close": 41300.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -7.26,
 "chip": "enter",
 "preds": [
 {
 "kind": "추세선",
 "price": 38523.0769,
-"slope": -1146.1538461538462
+"slope": -1146.1538461538462,
+"result": "돌파",
+"break_day": 1
 }
 ]
 },
@@ -183,13 +399,16 @@
 "close": 15950.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -3.95,
 "chip": "enter",
 "preds": [
 {
 "kind": "추세선",
 "price": 14020.0,
-"slope": -354.0
+"slope": -354.0,
+"result": "돌파",
+"break_day": 1
 }
 ]
 },
@@ -199,7 +418,8 @@
 "close": 17460.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -2.86,
 "chip": "enter",
 "preds": [
 {
@@ -208,12 +428,14 @@
 "lines": [
 "SMA20",
 "볼린저 중심"
-]
+],
+"result": "진행 중"
 },
 {
 "kind": "추세선",
 "price": 17128.3333,
-"slope": -162.77777777777777
+"slope": -162.77777777777777,
+"result": "대기"
 }
 ]
 },
@@ -223,13 +445,15 @@
 "close": 218000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -7.57,
 "chip": "wait",
 "preds": [
 {
 "kind": "추세선",
 "price": 240866.6667,
-"slope": -2033.3333333333333
+"slope": -2033.3333333333333,
+"result": "대기"
 }
 ]
 },
@@ -239,7 +463,8 @@
 "close": 41100.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -11.56,
 "chip": "wait",
 "preds": [
 {
@@ -249,12 +474,14 @@
 "SMA60",
 "수평 지지(3회)",
 "피보 50.0%"
-]
+],
+"result": "진행 중"
 },
 {
 "kind": "추세선",
 "price": 41250.0,
-"slope": -178.57142857142858
+"slope": -178.57142857142858,
+"result": "대기"
 }
 ]
 },
@@ -264,7 +491,8 @@
 "close": 1396000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -9.46,
 "chip": "wait",
 "preds": [
 {
@@ -273,12 +501,14 @@
 "lines": [
 "SMA20",
 "볼린저 중심"
-]
+],
+"result": "대기"
 },
 {
 "kind": "추세선",
 "price": 1523941.1765,
-"slope": -15764.70588235294
+"slope": -15764.70588235294,
+"result": "대기"
 }
 ]
 },
@@ -315,7 +545,7 @@
 "close": 348000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": -0.29,
 "chip": "wait",
 "preds": [
@@ -343,7 +573,7 @@
 "close": 181900.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": 16.55,
 "chip": "wait",
 "preds": [
@@ -371,7 +601,7 @@
 "close": 220000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": 1.59,
 "chip": "wait",
 "preds": [
@@ -390,7 +620,7 @@
 "close": 43300.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": 2.19,
 "chip": "wait",
 "preds": [
@@ -408,7 +638,7 @@
 "close": 40100.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": 2.24,
 "chip": "wait",
 "preds": [
@@ -427,7 +657,7 @@
 "close": 40450.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": 2.1,
 "chip": "enter",
 "preds": [
@@ -455,7 +685,7 @@
 "close": 15930.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": 0.13,
 "chip": "enter",
 "preds": [
@@ -474,7 +704,7 @@
 "close": 17280.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": 1.04,
 "chip": "wait",
 "preds": [
@@ -502,7 +732,7 @@
 "close": 219500.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": -0.68,
 "chip": "wait",
 "preds": [
@@ -520,7 +750,7 @@
 "close": 39450.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": 4.18,
 "chip": "wait",
 "preds": [
@@ -549,7 +779,7 @@
 "close": 1398000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": -0.14,
 "chip": "wait",
 "preds": [
@@ -603,7 +833,7 @@
 "close": 362500.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -4.0,
 "chip": "wait",
 "preds": [
@@ -621,7 +851,7 @@
 "close": 181700.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": 0.11,
 "chip": "wait",
 "preds": [
@@ -649,7 +879,7 @@
 "close": 222500.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -1.12,
 "chip": "enter",
 "preds": [
@@ -668,7 +898,7 @@
 "close": 46050.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -5.97,
 "chip": "wait",
 "preds": [
@@ -686,7 +916,7 @@
 "close": 40350.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -0.62,
 "chip": "wait",
 "preds": [
@@ -705,7 +935,7 @@
 "close": 43150.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -6.26,
 "chip": "enter",
 "preds": [
@@ -724,7 +954,7 @@
 "close": 15970.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -0.25,
 "chip": "enter",
 "preds": [
@@ -743,7 +973,7 @@
 "close": 17120.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": 0.93,
 "chip": "wait",
 "preds": [
@@ -762,7 +992,7 @@
 "close": 229000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -4.15,
 "chip": "wait",
 "preds": [
@@ -789,7 +1019,7 @@
 "close": 40700.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -3.07,
 "chip": "wait",
 "preds": [
@@ -826,7 +1056,7 @@
 "close": 1472000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -5.03,
 "chip": "wait",
 "preds": [
@@ -894,7 +1124,7 @@
 "close": 363000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": -0.14,
 "chip": "wait",
 "preds": [
@@ -912,7 +1142,7 @@
 "close": 182100.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": -0.22,
 "chip": "wait",
 "preds": [
@@ -965,7 +1195,7 @@
 "close": 212000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": 4.95,
 "chip": "wait",
 "preds": [
@@ -993,7 +1223,7 @@
 "close": 46850.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": -1.71,
 "chip": "wait",
 "preds": [
@@ -1011,7 +1241,7 @@
 "close": 38950.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": 3.59,
 "chip": "enter",
 "preds": [
@@ -1030,7 +1260,7 @@
 "close": 41200.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": 4.73,
 "chip": "wait",
 "preds": [
@@ -1065,7 +1295,7 @@
 "close": 15170.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": 5.27,
 "chip": "enter",
 "preds": [
@@ -1126,7 +1356,7 @@
 "close": 15880.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": 7.81,
 "chip": "wait",
 "preds": [
@@ -1145,7 +1375,7 @@
 "close": 225000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": 1.78,
 "chip": "wait",
 "preds": [
@@ -1163,7 +1393,7 @@
 "close": 40300.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": 0.99,
 "chip": "wait",
 "preds": [
@@ -1200,7 +1430,7 @@
 "close": 1418000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": 3.81,
 "chip": "wait",
 "preds": [
@@ -1283,15 +1513,16 @@
 "close": 378000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 4,
+"n_after": 5,
 "ret1": -3.97,
+"ret5": -11.51,
 "chip": "wait",
 "preds": [
 {
 "kind": "추세선",
 "price": 407208.3333,
 "slope": -1791.6666666666667,
-"result": "대기"
+"result": "못 넘음"
 }
 ]
 },
@@ -1301,8 +1532,9 @@
 "close": 181000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 4,
+"n_after": 5,
 "ret1": 0.61,
+"ret5": 22.1,
 "chip": "wait",
 "preds": [
 {
@@ -1313,7 +1545,7 @@
 "최근 저가",
 "볼린저 하단"
 ],
-"result": "진행 중"
+"result": "반응"
 },
 {
 "kind": "추세선",
@@ -1440,15 +1672,16 @@
 "close": 232000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 4,
+"n_after": 5,
 "ret1": -3.02,
+"ret5": -13.15,
 "chip": "enter",
 "preds": [
 {
 "kind": "추세선",
 "price": 266642.8571,
 "slope": -857.1428571428571,
-"result": "대기"
+"result": "못 넘음"
 }
 ]
 },
@@ -1458,8 +1691,9 @@
 "close": 40200.0,
 "krw": true,
 "src": "실시간",
-"n_after": 4,
+"n_after": 5,
 "ret1": 0.25,
+"ret5": -9.58,
 "chip": "wait",
 "preds": [
 {
@@ -1472,13 +1706,13 @@
 "수평 저항(3회)",
 "피보 38.2%"
 ],
-"result": "진행 중"
+"result": "막힘"
 },
 {
 "kind": "추세선",
 "price": 44400.0,
 "slope": -100.0,
-"result": "대기"
+"result": "못 넘음"
 }
 ]
 },
@@ -1488,15 +1722,16 @@
 "close": 1526000.0,
 "krw": true,
 "src": "실시간",
-"n_after": 4,
+"n_after": 5,
 "ret1": -7.08,
+"ret5": -17.17,
 "chip": "wait",
 "preds": [
 {
 "kind": "추세선",
 "price": 1587000.0,
 "slope": 8181.818181818182,
-"result": "대기"
+"result": "못 넘음"
 }
 ]
 },
@@ -1816,7 +2051,8 @@
 "price": 1495000.0,
 "slope": -200.0,
 "result": "돌파",
-"break_day": 1
+"break_day": 1,
+"ret_after": -17.17
 }
 ]
 },
@@ -5942,6 +6178,7 @@
 "n_after": 5,
 "ret1": -2.42,
 "ret5": -21.79,
+"ret20": -24.95,
 "preds": [
 {
 "kind": "받침",
@@ -5988,6 +6225,7 @@
 "n_after": 5,
 "ret1": -2.44,
 "ret5": -26.76,
+"ret20": -26.64,
 "preds": [
 {
 "kind": "천장",
