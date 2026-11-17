@@ -14,31 +14,31 @@
 }
 },
 "천장": {
-"n": 93,
-"good": 62,
+"n": 94,
+"good": 63,
 "pct": 67,
 "raw": {
 "돌파": 17,
-"막힘": 62,
+"막힘": 63,
 "애매": 14,
 "안 옴": 10,
-"진행 중": 30,
+"진행 중": 29,
 "대기": 4
 }
 },
 "추세선": {
 "raw": {
-"못 넘음": 159,
+"못 넘음": 160,
 "돌파": 198,
 "대기": 84
 },
-"n_ret": 149,
-"avg_ret_after": -2.26,
+"n_ret": 150,
+"avg_ret_after": -2.37,
 "win": 26
 },
 "더미 받침": {
-"n": 866,
-"good": 371,
+"n": 873,
+"good": 377,
 "pct": 43
 },
 "기간": {
@@ -49,6 +49,22 @@
 "horizon": 5
 },
 "rows": [
+{
+"sym": "INFQ",
+"asof": "2026-11-16",
+"close": 7.9,
+"krw": false,
+"src": "실시간",
+"n_after": 0,
+"chip": "exit",
+"preds": [
+{
+"kind": "추세선",
+"price": 9.0376,
+"slope": -0.1584848484848485
+}
+]
+},
 {
 "sym": "377300.KS",
 "asof": "2026-11-16",
@@ -274,13 +290,15 @@
 "close": 8.48,
 "krw": false,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": -6.84,
 "chip": "exit",
 "preds": [
 {
 "kind": "추세선",
 "price": 9.1961,
-"slope": -0.1584848484848485
+"slope": -0.1584848484848485,
+"result": "대기"
 }
 ]
 },
@@ -633,7 +651,7 @@
 "close": 8.73,
 "krw": false,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": -2.86,
 "chip": "hold",
 "preds": [
@@ -896,7 +914,7 @@
 "close": 9.42,
 "krw": false,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": -7.32,
 "chip": "target",
 "preds": [
@@ -1151,7 +1169,7 @@
 "close": 9.35,
 "krw": false,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": 0.75,
 "chip": "target",
 "preds": [
@@ -1373,8 +1391,9 @@
 "close": 9.66,
 "krw": false,
 "src": "실시간",
-"n_after": 4,
+"n_after": 5,
 "ret1": -3.21,
+"ret5": -18.22,
 "chip": "target",
 "preds": [
 {
@@ -1384,13 +1403,13 @@
 "하락 추세선",
 "전고점"
 ],
-"result": "진행 중"
+"result": "막힘"
 },
 {
 "kind": "추세선",
 "price": 9.83,
 "slope": -0.0012499999999999734,
-"result": "대기"
+"result": "못 넘음"
 }
 ]
 },
@@ -1660,7 +1679,8 @@
 "price": 8.3784,
 "slope": -0.2088,
 "result": "돌파",
-"break_day": 1
+"break_day": 1,
+"ret_after": -18.22
 }
 ]
 },
@@ -5991,6 +6011,7 @@
 "n_after": 5,
 "ret1": -1.03,
 "ret5": -1.37,
+"ret20": -9.71,
 "chip": "hold",
 "preds": [
 {
