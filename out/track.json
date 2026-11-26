@@ -28,7 +28,7 @@
 },
 "추세선": {
 "raw": {
-"못 넘음": 195,
+"못 넘음": 196,
 "돌파": 244,
 "대기": 87
 },
@@ -37,7 +37,7 @@
 "win": 28
 },
 "더미 받침": {
-"n": 1038,
+"n": 1037,
 "good": 429,
 "pct": 41
 },
@@ -49,6 +49,22 @@
 "horizon": 5
 },
 "rows": [
+{
+"sym": "INFQ",
+"asof": "2026-11-25",
+"close": 6.49,
+"krw": false,
+"src": "실시간",
+"n_after": 0,
+"chip": "exit",
+"preds": [
+{
+"kind": "추세선",
+"price": 7.415,
+"slope": -0.20124999999999993
+}
+]
+},
 {
 "sym": "294870.KS",
 "asof": "2026-11-25",
@@ -257,13 +273,15 @@
 "close": 6.34,
 "krw": false,
 "src": "실시간",
-"n_after": 0,
+"n_after": 1,
+"ret1": 2.37,
 "chip": "exit",
 "preds": [
 {
 "kind": "추세선",
 "price": 7.6163,
-"slope": -0.20124999999999993
+"slope": -0.20124999999999993,
+"result": "대기"
 }
 ]
 },
@@ -548,7 +566,7 @@
 "close": 6.75,
 "krw": false,
 "src": "실시간",
-"n_after": 1,
+"n_after": 2,
 "ret1": -6.07,
 "chip": "exit",
 "preds": [
@@ -847,7 +865,7 @@
 "close": 6.32,
 "krw": false,
 "src": "실시간",
-"n_after": 2,
+"n_after": 3,
 "ret1": 6.8,
 "chip": "exit",
 "preds": [
@@ -1219,7 +1237,7 @@
 "close": 7.3,
 "krw": false,
 "src": "실시간",
-"n_after": 3,
+"n_after": 4,
 "ret1": -13.42,
 "chip": "exit",
 "preds": [
@@ -1486,15 +1504,16 @@
 "close": 7.61,
 "krw": false,
 "src": "실시간",
-"n_after": 4,
+"n_after": 5,
 "ret1": -4.07,
+"ret5": -14.72,
 "chip": "exit",
 "preds": [
 {
 "kind": "추세선",
 "price": 8.7206,
 "slope": -0.1584848484848485,
-"result": "대기"
+"result": "못 넘음"
 }
 ]
 },
@@ -5893,6 +5912,7 @@
 "n_after": 5,
 "ret1": -2.08,
 "ret5": -11.11,
+"ret20": -32.61,
 "chip": "target",
 "preds": [
 {
